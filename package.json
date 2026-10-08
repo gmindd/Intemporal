@@ -1,9 +1,16 @@
 {
-  "name": "slotbook-template-basic",
+  "name": "intemporal-barbearia",
   "version": "1.0.0",
   "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@vercel/kv": "^3.0.0",
+    "express": "^4.21.2",
     "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.0",
     "resend": "^4.0.0"
