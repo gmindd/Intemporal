@@ -60,6 +60,7 @@ app.all('/api/:name', (req, res, next) => runHandler(req.params.name)(req, res, 
 // ── Static pages (only public folders — never api/, lib/ or config) ──
 app.get(['/', '/index.html'], (req, res) => res.sendFile(path.join(ROOT, 'index.html')));
 app.use('/admin', express.static(path.join(ROOT, 'admin'), { extensions: ['html'] }));
+app.use('/assets', express.static(path.join(ROOT, 'assets'), { maxAge: '7d' }));
 
 // Vercel Analytics script does not exist outside Vercel
 app.get('/_vercel/insights/script.js', (req, res) => res.type('js').send(''));

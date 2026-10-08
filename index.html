@@ -4,12 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Intemporal Barbearia — Corte, Barba &amp; Navalha</title>
-  <meta name="description" content="Intemporal Barbearia — Rua de Palme 277. Cortes clássicos e modernos, barba à navalha e acabamentos de detalhe. Avaliação 10/10. Marque a sua vez online.">
+  <meta name="description" content="Intemporal Barbearia — Rua de Palme 277. Cortes clássicos e modernos, barba à navalha e acabamentos de detalhe. Marque a sua vez online.">
   <meta name="theme-color" content="#0E0D0B">
   <meta property="og:title" content="Intemporal Barbearia">
   <meta property="og:description" content="O tempo passa. O estilo fica. Corte, barba e navalha na Rua de Palme 277 — marque online.">
   <meta property="og:type" content="website">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230E0D0B'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='Georgia,serif' font-size='40' fill='%23C29A5B'%3EI%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" href="/assets/favicon.png">
+  <link rel="apple-touch-icon" href="/assets/logo-redondo.png">
+  <meta property="og:image" content="/assets/logo-redondo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -43,6 +45,7 @@
       --sans:  'Manrope', system-ui, sans-serif;
     }
 
+    [hidden] { display: none !important; }
     html { scroll-behavior: smooth; }
 
     body {
@@ -240,15 +243,11 @@
       position: absolute; inset: 15%;
       border-radius: 50%;
       border: 1px solid rgba(194,154,91,.55);
-      background: radial-gradient(circle at 50% 35%, #1F1C17 0%, #0E0D0B 75%);
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      box-shadow: inset 0 0 0 10px #0E0D0B, inset 0 0 0 11px rgba(194,154,91,.25), 0 30px 80px rgba(0,0,0,.5);
-      text-align: center;
+      background: #000;
+      overflow: hidden;
+      box-shadow: 0 0 0 10px #0E0D0B, 0 0 0 11px rgba(194,154,91,.25), 0 30px 80px rgba(0,0,0,.55);
     }
-    .seal-letter { font-family: var(--serif); font-size: clamp(6rem, 14vw, 9rem); line-height: .9; color: var(--brass); font-weight: 500; }
-    .seal-name { font-size: .7rem; letter-spacing: .5em; text-transform: uppercase; color: rgba(255,255,255,.85); margin-top: 6px; padding-left: .5em; }
-    .seal-rule { width: 46px; height: 1px; background: var(--brass); margin: 14px auto 10px; opacity: .7; }
-    .seal-small { font-family: var(--serif); font-style: italic; font-size: 1.05rem; color: rgba(255,255,255,.55); }
+    .seal-core img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
     .hero-badge {
       position: absolute;
@@ -278,9 +277,12 @@
       box-shadow: var(--shadow-lg);
       text-align: center;
     }
-    .hero-badge2-score { font-family: var(--serif); font-size: 1.7rem; font-weight: 600; color: var(--brass); line-height: 1; }
-    .hero-badge2-score small { font-size: .9rem; color: rgba(255,255,255,.5); }
-    .hero-badge2-text { font-size: .6rem; color: rgba(255,255,255,.65); font-weight: 600; letter-spacing: .16em; text-transform: uppercase; margin-top: 4px; }
+    .hero-badge2 { display: flex; align-items: center; gap: 10px; transition: border-color .2s; }
+    .hero-badge2:hover { border-color: var(--brass); }
+    .hero-badge2-score { font-family: var(--serif); font-size: 1.6rem; font-weight: 600; color: var(--white); line-height: 1; }
+    .hero-badge2-score[hidden] { display: none; }
+    .hero-badge2-stars { color: var(--brass); font-size: .8rem; letter-spacing: .12em; line-height: 1; }
+    .hero-badge2-text { font-size: .6rem; color: rgba(255,255,255,.65); font-weight: 600; letter-spacing: .16em; text-transform: uppercase; margin-top: 4px; text-align: left; }
 
     @media (max-width: 900px) {
       .hero { padding-top: 110px; }
@@ -317,12 +319,18 @@
     .about-img {
       position: relative;
       aspect-ratio: 4/5;
-      background: var(--ink);
+      background: var(--ink) url('/assets/barbeiro.jpg') center 30% / cover no-repeat;
       color: var(--white);
       border-radius: var(--r-lg);
       padding: 48px 40px;
+      isolation: isolate;
       display: flex; flex-direction: column; justify-content: space-between;
       overflow: hidden;
+    }
+    .about-img::after {
+      content: ''; position: absolute; inset: 0; z-index: -1;
+      background:
+        linear-gradient(180deg, rgba(14,13,11,.94) 0%, rgba(14,13,11,.78) 30%, rgba(14,13,11,.2) 58%, rgba(14,13,11,.15) 72%, rgba(14,13,11,.88) 100%);
     }
     .about-img::before {
       content: ''; position: absolute; inset: 14px;
@@ -331,7 +339,7 @@
     .def-word { font-family: var(--serif); font-size: clamp(2.6rem, 5vw, 3.4rem); font-weight: 600; line-height: 1; }
     .def-phon { font-family: var(--serif); font-style: italic; color: var(--brass); font-size: 1.15rem; margin-top: 10px; }
     .def-class { font-size: .68rem; letter-spacing: .25em; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: 24px; }
-    .def-body { font-family: var(--serif); font-size: 1.45rem; line-height: 1.4; color: rgba(255,255,255,.88); margin-top: 10px; }
+    .def-body { font-family: var(--serif); font-size: 1.45rem; line-height: 1.4; color: rgba(255,255,255,.92); margin-top: 10px; max-width: 300px; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
     .def-body em { color: var(--brass-l); }
     .def-foot { display: flex; align-items: center; justify-content: space-between; font-size: .66rem; letter-spacing: .25em; text-transform: uppercase; color: rgba(255,255,255,.45); }
     .def-foot svg { color: var(--brass); }
@@ -363,7 +371,7 @@
     @media (max-width: 860px) {
       .about { padding: 88px 0; }
       .about-grid { grid-template-columns: 1fr; gap: 56px; }
-      .about-img { aspect-ratio: auto; min-height: 380px; padding: 40px 32px; }
+      .about-img { aspect-ratio: 4/5; padding: 36px 28px; }
       .about-pill { right: 12px; top: -16px; }
       .about-accent { right: -10px; bottom: -10px; }
     }
@@ -425,14 +433,40 @@
       .svc-title { font-size: 1.35rem; }
     }
 
-    /* ── Rating band ────────────────────────────────── */
-    .rating { padding: 96px 0; background: var(--bone); text-align: center; position: relative; }
-    .rating-score { font-family: var(--serif); font-size: clamp(5rem, 14vw, 8.5rem); font-weight: 600; line-height: 1; color: var(--ink); }
-    .rating-score span { color: var(--brass-d); font-size: .45em; }
-    .rating-stars { color: var(--brass-d); letter-spacing: .3em; font-size: 1.1rem; margin: 14px 0 18px; }
-    .rating-quote { font-family: var(--serif); font-style: italic; font-size: clamp(1.4rem, 3vw, 2rem); color: var(--text); max-width: 680px; margin: 0 auto; line-height: 1.35; }
-    .rating-src { font-size: .7rem; letter-spacing: .24em; text-transform: uppercase; color: var(--text3); margin-top: 22px; }
-    .rating-links { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
+    /* ── Google reviews ───────────────────────────── */
+    .reviews { padding: 110px 0; background: var(--bone); position: relative; }
+    .reviews-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; flex-wrap: wrap; margin-bottom: 48px; }
+    .reviews-summary { display: flex; align-items: center; gap: 18px; }
+    .reviews-summary[hidden] { display: none; }
+    .reviews-score { font-family: var(--serif); font-size: clamp(3.6rem, 8vw, 5rem); font-weight: 600; line-height: 1; color: var(--ink); }
+    .reviews-stars { color: var(--brass-d); font-size: 1.05rem; letter-spacing: .14em; }
+    .reviews-count { font-size: .7rem; letter-spacing: .2em; text-transform: uppercase; color: var(--text3); margin-top: 6px; }
+    .g-logo { display: inline-flex; align-items: center; gap: 8px; font-size: .7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--text2); }
+
+    .reviews-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .review-card {
+      background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg);
+      padding: 28px 26px; display: flex; flex-direction: column; gap: 14px;
+    }
+    .review-stars { color: var(--brass-d); letter-spacing: .12em; font-size: .95rem; }
+    .review-text { font-family: var(--serif); font-size: 1.2rem; line-height: 1.45; color: var(--text); flex: 1; }
+    .review-text.clamp { display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+    .review-author { display: flex; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .review-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: var(--ink); color: var(--brass); display: grid; place-items: center; font-weight: 700; flex-shrink: 0; }
+    .review-name { font-size: .9rem; font-weight: 700; color: var(--ink); }
+    .review-name a:hover { color: var(--brass-d); }
+    .review-when { font-size: .74rem; color: var(--text3); }
+
+    .reviews-empty {
+      text-align: center; padding: 56px 24px; border: 1px dashed var(--border); border-radius: var(--r-lg); background: var(--paper);
+    }
+    .reviews-empty p { font-family: var(--serif); font-style: italic; font-size: clamp(1.3rem, 3vw, 1.8rem); color: var(--text); max-width: 620px; margin: 0 auto; line-height: 1.4; }
+    .rating-links { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 40px; }
+
+    @media (max-width: 900px) {
+      .reviews { padding: 88px 0; }
+      .reviews-grid { grid-template-columns: 1fr; }
+    }
     .btn-dark { background: var(--ink); color: var(--white); }
     .btn-dark:hover { background: var(--ink3); transform: translateY(-2px); }
     .btn-line { background: transparent; color: var(--ink); border-color: var(--ink); }
@@ -699,8 +733,8 @@
           </div>
           <div class="hero-stats">
             <div>
-              <div class="hero-stat-num">10<span>/10</span></div>
-              <div class="hero-stat-label">Avaliação Noona</div>
+              <div class="hero-stat-num" id="heroStatNum">277</div>
+              <div class="hero-stat-label" id="heroStatLabel">Rua de Palme</div>
             </div>
             <div>
               <div class="hero-stat-num">24<span>h</span></div>
@@ -714,7 +748,7 @@
         </div>
 
         <div class="hero-visual">
-          <div class="seal" aria-hidden="true">
+          <div class="seal" role="img" aria-label="Logótipo Intemporal Barbearia">
             <svg class="seal-ring" viewBox="0 0 400 400">
               <defs>
                 <path id="sealCircle" d="M200,200 m-176,0 a176,176 0 1,1 352,0 a176,176 0 1,1 -352,0"/>
@@ -724,11 +758,7 @@
               <text><textPath href="#sealCircle" startOffset="0">Intemporal ✦ Barbearia ✦ Corte ✦ Barba ✦ Navalha ✦ Rua de Palme 277 ✦</textPath></text>
             </svg>
             <div class="seal-core">
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#C29A5B" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;opacity:.85"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
-              <div class="seal-letter">I</div>
-              <div class="seal-name">Intemporal</div>
-              <div class="seal-rule"></div>
-              <div class="seal-small">barbearia</div>
+              <img src="/assets/logo-redondo.png" alt="" width="372" height="372">
             </div>
           </div>
           <div class="hero-badge">
@@ -740,10 +770,13 @@
               <div class="hero-badge-val" id="nextSlotBadge">—</div>
             </div>
           </div>
-          <div class="hero-badge2">
-            <div class="hero-badge2-score">10<small>/10</small></div>
-            <div class="hero-badge2-text">★★★★★ Clientes</div>
-          </div>
+          <a class="hero-badge2" href="https://share.google/2Y409U4Trqi8jOXDf" target="_blank" rel="noopener" data-google-link>
+            <div class="hero-badge2-score" id="heroGoogleScore" hidden></div>
+            <div>
+              <div class="hero-badge2-stars">★★★★★</div>
+              <div class="hero-badge2-text">Avaliações Google</div>
+            </div>
+          </a>
         </div>
       </div>
     </div>
@@ -762,7 +795,7 @@
     <div class="container">
       <div class="about-grid">
         <div class="about-img-wrap reveal">
-          <div class="about-img">
+          <div class="about-img" role="img" aria-label="Retrato do barbeiro da Intemporal Barbearia">
             <div>
               <div class="def-word">in·tem·po·ral</div>
               <div class="def-phon">/ĩ.tẽ.puˈɾaɫ/</div>
@@ -775,7 +808,7 @@
             </div>
           </div>
           <div class="about-accent"></div>
-          <div class="about-pill">✦ Avaliação 10/10</div>
+          <div class="about-pill">✦ O barbeiro</div>
         </div>
 
         <div class="about-text">
@@ -889,17 +922,32 @@
     </div>
   </section>
 
-  <!-- ── Avaliação ─────────────────────────────────────── -->
-  <section class="rating" id="avaliacoes">
+  <!-- ── Avaliações Google ──────────────────────────────── -->
+  <section class="reviews" id="avaliacoes">
     <div class="container">
-      <span class="section-tag reveal">O que dizem os clientes</span>
-      <div class="rating-score reveal reveal-delay-1">10<span>/10</span></div>
-      <div class="rating-stars reveal reveal-delay-1">★★★★★</div>
-      <p class="rating-quote reveal reveal-delay-2">A melhor publicidade é quem sai da cadeira e volta. A avaliação dos nossos clientes fala por nós.</p>
-      <div class="rating-src reveal reveal-delay-2">Avaliação média no Noona</div>
+      <div class="reviews-head">
+        <div>
+          <span class="section-tag reveal">Avaliações Google</span>
+          <h2 class="section-title reveal reveal-delay-1" style="margin-bottom:0">Quem senta,<br><em>volta</em></h2>
+        </div>
+        <div class="reviews-summary reveal reveal-delay-2" id="reviewsSummary" hidden>
+          <div class="reviews-score" id="reviewsScore"></div>
+          <div>
+            <div class="reviews-stars" id="reviewsStars"></div>
+            <div class="reviews-count" id="reviewsCount"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reviews-grid" id="reviewsGrid" hidden></div>
+
+      <div class="reviews-empty reveal reveal-delay-2" id="reviewsEmpty">
+        <p>A melhor publicidade é quem sai da cadeira e volta. Lê o que os nossos clientes dizem de nós no Google.</p>
+      </div>
+
       <div class="rating-links reveal reveal-delay-3">
-        <a class="btn btn-dark" href="https://share.google/2Y409U4Trqi8jOXDf" target="_blank" rel="noopener">Ver no Google</a>
-        <a class="btn btn-line" href="https://noona.pt/intemporalbarbearia" target="_blank" rel="noopener">Ver no Noona</a>
+        <a class="btn btn-dark" href="https://share.google/2Y409U4Trqi8jOXDf" target="_blank" rel="noopener" data-google-link>Ver avaliações no Google</a>
+        <a class="btn btn-line" id="reviewWriteLink" href="https://share.google/2Y409U4Trqi8jOXDf" target="_blank" rel="noopener">Deixar avaliação</a>
       </div>
     </div>
   </section>
@@ -1108,7 +1156,6 @@
         <p class="footer-copy">© <span id="footerYear"></span> Intemporal Barbearia · Rua de Palme 277</p>
         <div class="footer-links">
           <a href="https://www.instagram.com/intemporal.barbearia/" target="_blank" rel="noopener">Instagram</a>
-          <a href="https://noona.pt/intemporalbarbearia" target="_blank" rel="noopener">Noona</a>
           <a href="https://www.slotbook.cc" target="_blank" rel="noopener">Powered by SlotBook</a>
           <a href="/admin">Backoffice</a>
         </div>
@@ -1252,6 +1299,64 @@
           return;
         }
         document.getElementById('nextSlotBadge').textContent = 'Sem vagas próximas';
+      } catch {}
+    })();
+
+    /* ── Google reviews ──────────────────────────────── */
+    (async () => {
+      try {
+        const res = await fetch('/api/reviews');
+        if (!res.ok) return;
+        const g = await res.json();
+        if (!g.configured) return;
+
+        const stars = n => '★★★★★'.slice(0, Math.round(n)) + '☆☆☆☆☆'.slice(0, 5 - Math.round(n));
+        const fmt = n => Number(n).toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+        if (g.mapsUrl) document.querySelectorAll('[data-google-link]').forEach(a => a.href = g.mapsUrl);
+        if (g.writeReviewUrl) document.getElementById('reviewWriteLink').href = g.writeReviewUrl;
+
+        if (g.rating) {
+          document.getElementById('reviewsScore').textContent = fmt(g.rating);
+          document.getElementById('reviewsStars').textContent = stars(g.rating);
+          document.getElementById('reviewsCount').textContent = `${g.total} avaliações no Google`;
+          document.getElementById('reviewsSummary').hidden = false;
+
+          const heroScore = document.getElementById('heroGoogleScore');
+          heroScore.textContent = fmt(g.rating);
+          heroScore.hidden = false;
+
+          document.getElementById('heroStatNum').innerHTML = `${fmt(g.rating)}<span>★</span>`;
+          document.getElementById('heroStatLabel').textContent = 'Google';
+        }
+
+        if (g.reviews?.length) {
+          const grid = document.getElementById('reviewsGrid');
+          grid.innerHTML = '';
+          g.reviews.slice(0, 6).forEach(rv => {
+            const card = document.createElement('article');
+            card.className = 'review-card';
+            const name = rv.authorUrl
+              ? `<a href="${esc2(rv.authorUrl)}" target="_blank" rel="noopener nofollow">${esc2(rv.author)}</a>`
+              : esc2(rv.author);
+            const avatar = rv.photo
+              ? `<img class="review-avatar" src="${esc2(rv.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
+              : `<span class="review-avatar">${esc2(rv.author.charAt(0).toUpperCase())}</span>`;
+            card.innerHTML = `
+              <div class="review-stars" aria-label="${rv.rating} em 5 estrelas">${stars(rv.rating)}</div>
+              <p class="review-text clamp">“${esc2(rv.text)}”</p>
+              <div class="review-author">
+                ${avatar}
+                <div>
+                  <div class="review-name">${name}</div>
+                  <div class="review-when">${esc2(rv.when)} · Google</div>
+                </div>
+              </div>`;
+            grid.appendChild(card);
+          });
+          grid.hidden = false;
+          document.getElementById('reviewsEmpty').hidden = true;
+        }
       } catch {}
     })();
 
