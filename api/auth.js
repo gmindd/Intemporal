@@ -26,6 +26,7 @@ module.exports = async function handler(req, res) {
       if (config && submitted && submitted === (config.email || '').toLowerCase()) {
         const settings   = (await kv.get('settings')) || {};
         const resendKey  = process.env.RESEND_API_KEY || settings.resendApiKey || '';
+        const brand      = settings.businessName || 'Intemporal Barbearia';
         if (resendKey) {
           const token = crypto.randomBytes(32).toString('hex');
           await kv.set(`recover:${token}`, config.email, { ex: 3600 });
@@ -34,12 +35,12 @@ module.exports = async function handler(req, res) {
           const link  = `${proto}://${host}/admin?reset=${token}`;
           const resend = new Resend(resendKey);
           await resend.emails.send({
-            from: 'SlotBook <noreply@slotbook.cc>',
+            from: `${brand} <${process.env.EMAIL_FROM || 'noreply@slotbook.cc'}>`,
             to:   config.email,
-            subject: 'Recuperação de password — SlotBook',
+            subject: `Recuperação de password — ${brand}`,
             html: `
               <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
-                <h2 style="color:#B30000">SlotBook — Recuperar Password</h2>
+                <h2 style="color:#B30000">${brand} — Recuperar Password</h2>
                 <p>Recebemos um pedido de recuperação de password para a tua conta.</p>
                 <p>Clica no botão abaixo para definir uma nova password. O link é válido durante <strong>1 hora</strong>.</p>
                 <p style="margin:28px 0">

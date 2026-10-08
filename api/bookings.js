@@ -3,6 +3,9 @@ const { getAuthorizedClient, createCalendarEvent } = require('../lib/google');
 const { kv } = require('../lib/kv');
 const { Resend } = require('resend');
 
+// Sender address: must belong to a domain verified in your Resend account
+const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@slotbook.cc';
+
 // Returns "YYYY-MM-DDTHH:MM:00" — no timezone offset, so Google Calendar
 // applies timeZone:'Europe/Lisbon' correctly instead of ignoring it.
 function toLocalISO(date, time) {
@@ -267,7 +270,7 @@ module.exports = async function handler(req, res) {
         startLocal,
         endLocal,
         organizerName:  businessName,
-        organizerEmail: notifyEmail || `noreply@slotbook.cc`,
+        organizerEmail: notifyEmail || EMAIL_FROM,
         attendeeName:   name,
         attendeeEmail:  email,
       });
@@ -284,7 +287,7 @@ module.exports = async function handler(req, res) {
       if (notifyEmail && settings.notifyBookings !== false) {
         try {
           await resend.emails.send({
-            from:    `${businessName} <noreply@slotbook.cc>`,
+            from:    `${businessName} <${EMAIL_FROM}>`,
             to:      notifyEmail,
             subject: `📅 Nova marcação: ${name} — ${date} às ${time}`,
             html: `
@@ -319,7 +322,7 @@ module.exports = async function handler(req, res) {
 
       try {
         await resend.emails.send({
-          from:    `${businessName} <noreply@slotbook.cc>`,
+          from:    `${businessName} <${EMAIL_FROM}>`,
           to:      email,
           subject: `Marcação confirmada — ${date} às ${time}`,
           attachments: [{
@@ -413,7 +416,7 @@ module.exports = async function handler(req, res) {
           startLocal,
           endLocal,
           organizerName:  businessName,
-          organizerEmail: settings.notificationEmail || `noreply@slotbook.cc`,
+          organizerEmail: settings.notificationEmail || EMAIL_FROM,
           attendeeName:   updated.name,
           attendeeEmail:  updated.email,
         });
@@ -430,7 +433,7 @@ module.exports = async function handler(req, res) {
 
         try {
           await resend.emails.send({
-            from:    `${businessName} <noreply@slotbook.cc>`,
+            from:    `${businessName} <${EMAIL_FROM}>`,
             to:      updated.email,
             subject: `Marcação reagendada — ${date} às ${time}`,
             attachments: [{
