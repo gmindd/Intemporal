@@ -3,184 +3,162 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Barber — Barbearia Premium</title>
-  <meta name="description" content="Barbearia premium. Cortes clássicos e modernos, barba tratada com detalhe, degradê e rituais exclusivos. Marque a sua vez online.">
+  <title>Intemporal Barbearia — Corte, Barba &amp; Navalha</title>
+  <meta name="description" content="Intemporal Barbearia — Rua de Palme 277. Cortes clássicos e modernos, barba à navalha e acabamentos de detalhe. Avaliação 10/10. Marque a sua vez online.">
+  <meta name="theme-color" content="#0E0D0B">
+  <meta property="og:title" content="Intemporal Barbearia">
+  <meta property="og:description" content="O tempo passa. O estilo fica. Corte, barba e navalha na Rua de Palme 277 — marque online.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230E0D0B'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-family='Georgia,serif' font-size='40' fill='%23C29A5B'%3EI%3C/text%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     /* ── Reset & base ───────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --dark:    #0D0B08;
-      --dark2:   #1A1410;
-      --red:     #8B2635;
-      --red-l:   #A63245;
-      --gold:    #C49A3C;
-      --gold-l:  #D4AA52;
+      --ink:     #0E0D0B;
+      --ink2:    #171512;
+      --ink3:    #221F1B;
+      --brass:   #C29A5B;
+      --brass-l: #D6B47C;
+      --brass-d: #9C7840;
+      --ox:      #7A2E2A;   /* barber oxblood, used sparingly */
+      --paper:   #FAF7F1;
+      --bone:    #F1EBDF;
+      --bone2:   #E7DECE;
       --white:   #FFFFFF;
-      --off:     #F5F0E8;
-      --off2:    #EDE6D8;
-      --text:    #1A1410;
-      --text2:   #4A3D32;
-      --text3:   #8A7A6A;
-      --border:  #D5C8B5;
-      --r:       10px;
-      --r-lg:    18px;
-      --shadow:  0 4px 24px rgba(13,11,8,.10);
-      --shadow-lg: 0 12px 48px rgba(13,11,8,.18);
+      --text:    #1B1915;
+      --text2:   #4D463C;
+      --text3:   #8C8274;
+      --border:  #DCD2C1;
+      --line-d:  rgba(255,255,255,.09);
+      --red:     var(--brass-d); /* legacy alias used by inline styles / modal */
+      --r:       4px;
+      --r-lg:    8px;
+      --shadow:  0 4px 24px rgba(14,13,11,.10);
+      --shadow-lg: 0 18px 60px rgba(14,13,11,.22);
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      --sans:  'Manrope', system-ui, sans-serif;
     }
 
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'Outfit', sans-serif;
+      font-family: var(--sans);
       color: var(--text);
-      background: var(--white);
-      line-height: 1.6;
+      background: var(--paper);
+      line-height: 1.65;
       overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
-    h1, h2, h3, h4 { font-family: 'Playfair Display', serif; line-height: 1.2; }
+    h1, h2, h3, h4 { font-family: var(--serif); font-weight: 600; line-height: 1.08; letter-spacing: -.005em; }
 
     img { display: block; max-width: 100%; }
-
     a { color: inherit; text-decoration: none; }
+    ::selection { background: var(--brass); color: var(--ink); }
 
     /* ── Utility ────────────────────────────────────── */
-    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+    @media (max-width: 560px) { .container { padding: 0 16px; } }
 
     .section-tag {
-      display: inline-block;
-      font-size: .75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-size: .72rem;
       font-weight: 600;
-      letter-spacing: .12em;
+      letter-spacing: .28em;
       text-transform: uppercase;
-      color: var(--red);
-      margin-bottom: 12px;
+      color: var(--brass-d);
+      margin-bottom: 18px;
     }
+    .section-tag::before { content: ''; width: 28px; height: 1px; background: currentColor; }
 
     .section-title {
-      font-size: clamp(1.8rem, 4vw, 2.6rem);
-      color: var(--dark);
-      margin-bottom: 16px;
+      font-size: clamp(2.2rem, 5vw, 3.4rem);
+      color: var(--ink);
+      margin-bottom: 18px;
     }
+    .section-title em { font-style: italic; color: var(--brass-d); }
 
     .section-sub {
-      font-size: 1.05rem;
+      font-size: 1.02rem;
       color: var(--text2);
       max-width: 560px;
-      line-height: 1.7;
+      line-height: 1.8;
     }
 
     .btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 14px 28px;
-      border-radius: 50px;
-      font-family: 'Outfit', sans-serif;
-      font-size: .95rem;
-      font-weight: 500;
+      justify-content: center;
+      gap: 10px;
+      padding: 15px 30px;
+      border-radius: 2px;
+      font-family: var(--sans);
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .18em;
+      text-transform: uppercase;
       cursor: pointer;
-      border: none;
+      border: 1px solid transparent;
       transition: all .25s;
     }
-
-    .btn-primary {
-      background: var(--gold);
-      color: var(--white);
-      box-shadow: 0 4px 18px rgba(196,154,60,.35);
-    }
-    .btn-primary:hover { background: var(--gold-l); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(196,154,60,.4); }
-
-    .btn-outline {
-      background: transparent;
-      color: var(--white);
-      border: 1.5px solid rgba(255,255,255,.5);
-    }
-    .btn-outline:hover { background: rgba(255,255,255,.1); border-color: var(--white); }
+    .btn-primary { background: var(--brass); color: var(--ink); }
+    .btn-primary:hover { background: var(--brass-l); transform: translateY(-2px); box-shadow: 0 10px 28px rgba(194,154,91,.28); }
+    .btn-outline { background: transparent; color: var(--white); border-color: rgba(255,255,255,.35); }
+    .btn-outline:hover { border-color: var(--brass); color: var(--brass-l); }
 
     /* ── Scroll reveal ──────────────────────────────── */
-    .reveal {
-      opacity: 0;
-      transform: translateY(32px);
-      transition: opacity .65s ease, transform .65s ease;
-    }
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s ease, transform .7s ease; }
     .reveal.visible { opacity: 1; transform: none; }
     .reveal-delay-1 { transition-delay: .1s; }
     .reveal-delay-2 { transition-delay: .2s; }
     .reveal-delay-3 { transition-delay: .3s; }
     .reveal-delay-4 { transition-delay: .4s; }
     .reveal-delay-5 { transition-delay: .5s; }
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .seal-ring, .marquee-track { animation: none !important; }
+    }
 
     /* ── Nav ────────────────────────────────────────── */
-    .nav {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      padding: 20px 0;
-      transition: all .3s;
-    }
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 22px 0; transition: all .3s; }
     .nav.scrolled {
-      background: rgba(13,11,8,.96);
+      background: rgba(14,13,11,.94);
       backdrop-filter: blur(12px);
       padding: 14px 0;
-      box-shadow: 0 2px 20px rgba(0,0,0,.3);
+      border-bottom: 1px solid var(--line-d);
     }
-    .nav-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .nav-logo {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.4rem;
-      color: var(--white);
-      font-weight: 600;
-      letter-spacing: .02em;
-    }
-    .nav-logo span { color: var(--gold); }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; }
 
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 32px;
-      list-style: none;
+    .nav-logo { display: flex; align-items: center; gap: 12px; color: var(--white); }
+    .nav-logo-mark {
+      width: 38px; height: 38px;
+      border: 1px solid var(--brass);
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-family: var(--serif); font-size: 1.35rem; font-weight: 600; color: var(--brass);
     }
-    .nav-links a {
-      font-size: .88rem;
-      font-weight: 500;
-      color: rgba(255,255,255,.8);
-      letter-spacing: .03em;
-      transition: color .2s;
-    }
-    .nav-links a:hover { color: var(--white); }
+    .nav-logo-text { display: flex; flex-direction: column; line-height: 1; }
+    .nav-logo-name { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+    .nav-logo-sub { font-size: .58rem; letter-spacing: .42em; text-transform: uppercase; color: var(--brass); margin-top: 4px; }
 
-    .nav-cta {
-      padding: 10px 22px !important;
-      font-size: .85rem !important;
+    .nav-links { display: flex; align-items: center; gap: 34px; list-style: none; }
+    .nav-links a:not(.btn) {
+      font-size: .74rem; font-weight: 600; letter-spacing: .2em; text-transform: uppercase;
+      color: rgba(255,255,255,.75); transition: color .2s;
     }
+    .nav-links a:not(.btn):hover { color: var(--brass-l); }
+    .nav-cta { padding: 11px 20px !important; }
 
-    .nav-burger {
-      display: none;
-      flex-direction: column;
-      gap: 5px;
-      cursor: pointer;
-      background: none;
-      border: none;
-      padding: 4px;
-    }
-    .nav-burger span {
-      display: block;
-      width: 24px; height: 2px;
-      background: var(--white);
-      border-radius: 2px;
-      transition: all .3s;
-    }
+    .nav-burger { display: none; flex-direction: column; gap: 6px; cursor: pointer; background: none; border: none; padding: 6px; }
+    .nav-burger span { display: block; width: 26px; height: 1.5px; background: var(--white); transition: all .3s; }
 
-    @media (max-width: 768px) {
+    @media (max-width: 860px) {
       .nav-links { display: none; }
       .nav-burger { display: flex; }
     }
@@ -188,685 +166,480 @@
     /* ── Hero ───────────────────────────────────────── */
     .hero {
       min-height: 100vh;
-      background: linear-gradient(135deg, #0D0B08 0%, #1A1410 50%, #120E0A 100%);
+      min-height: 100svh;
+      background: var(--ink);
       display: flex;
       align-items: center;
       position: relative;
       overflow: hidden;
+      padding: 120px 0 80px;
+      color: var(--white);
     }
-
     .hero::before {
       content: '';
-      position: absolute;
-      inset: 0;
+      position: absolute; inset: 0;
       background:
-        radial-gradient(ellipse 80% 60% at 70% 50%, rgba(139,38,53,.14) 0%, transparent 70%),
-        radial-gradient(ellipse 40% 40% at 20% 80%, rgba(196,154,60,.07) 0%, transparent 60%);
+        radial-gradient(ellipse 60% 70% at 78% 45%, rgba(194,154,91,.13) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 50% at 10% 100%, rgba(122,46,42,.18) 0%, transparent 70%);
+      pointer-events: none;
     }
-
+    /* subtle grain / pinstripe */
     .hero::after {
       content: '';
-      position: absolute;
-      width: 700px; height: 700px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(196,154,60,.07) 0%, transparent 65%);
-      top: 20%; left: 55%;
-      transform: translate(-50%, -50%) translate(calc(var(--px, 0) * 28px), calc(var(--py, 0) * 18px));
+      position: absolute; inset: 0;
+      background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.018) 0 1px, transparent 1px 96px);
       pointer-events: none;
-      transition: transform 1s cubic-bezier(0.23, 1, 0.32, 1);
-      z-index: 0;
     }
 
     .hero-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 64px;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 56px;
       align-items: center;
       position: relative;
       z-index: 1;
     }
 
     .hero-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(139,38,53,.18);
-      border: 1px solid rgba(139,38,53,.3);
-      color: #D4899A;
-      font-size: .8rem;
-      font-weight: 500;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      padding: 6px 14px;
-      border-radius: 50px;
-      margin-bottom: 20px;
+      display: inline-flex; align-items: center; gap: 14px;
+      font-size: .7rem; font-weight: 600; letter-spacing: .32em; text-transform: uppercase;
+      color: var(--brass); margin-bottom: 28px;
     }
-    .hero-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #D4899A; }
+    .hero-tag::before { content: ''; width: 40px; height: 1px; background: var(--brass); }
 
-    .hero-title {
-      font-size: clamp(2.4rem, 5vw, 3.6rem);
-      color: var(--white);
-      line-height: 1.15;
-      margin-bottom: 20px;
-    }
-    .hero-title em { color: var(--gold); font-style: normal; }
+    .hero-title { font-size: clamp(3rem, 7.4vw, 6rem); line-height: .98; margin-bottom: 28px; font-weight: 500; }
+    .hero-title em { font-style: italic; color: var(--brass); }
 
-    .hero-sub {
-      font-size: 1.05rem;
-      color: rgba(255,255,255,.7);
-      line-height: 1.75;
-      margin-bottom: 36px;
-      max-width: 460px;
-    }
+    .hero-sub { font-size: 1.05rem; color: rgba(255,255,255,.66); line-height: 1.8; margin-bottom: 40px; max-width: 470px; }
 
-    .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; }
 
     .hero-stats {
-      display: flex;
-      gap: 32px;
-      margin-top: 48px;
-      padding-top: 36px;
-      border-top: 1px solid rgba(255,255,255,.1);
+      display: flex; gap: 0; margin-top: 56px; padding-top: 32px;
+      border-top: 1px solid var(--line-d);
     }
-    .hero-stat-num {
-      font-family: 'Playfair Display', serif;
-      font-size: 2rem;
-      color: var(--white);
-      font-weight: 600;
-      line-height: 1;
-    }
-    .hero-stat-num span { color: var(--gold); }
-    .hero-stat-label { font-size: .78rem; color: rgba(255,255,255,.5); margin-top: 4px; letter-spacing: .04em; }
+    .hero-stats > div { flex: 1; padding-right: 20px; }
+    .hero-stats > div + div { padding-left: 20px; border-left: 1px solid var(--line-d); }
+    .hero-stat-num { font-family: var(--serif); font-size: 2.3rem; font-weight: 600; line-height: 1; }
+    .hero-stat-num span { color: var(--brass); }
+    .hero-stat-label { font-size: .68rem; color: rgba(255,255,255,.5); margin-top: 8px; letter-spacing: .16em; text-transform: uppercase; }
 
-    .hero-visual {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
+    .hero-visual { display: flex; justify-content: center; align-items: center; position: relative; }
 
-    .hero-card-wrap {
+    .seal {
       position: relative;
-      width: 100%;
-      max-width: 440px;
+      width: min(440px, 100%);
+      aspect-ratio: 1;
+      transform: translate(calc(var(--px, 0) * -14px), calc(var(--py, 0) * -10px));
+      transition: transform 1s cubic-bezier(0.23, 1, 0.32, 1);
     }
-
-    .hero-img-box {
-      width: 100%;
-      aspect-ratio: 4/5;
-      border-radius: var(--r-lg);
-      background: linear-gradient(160deg, rgba(139,38,53,.2) 0%, rgba(13,11,8,.5) 100%);
-      border: 1px solid rgba(255,255,255,.08);
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
+    .seal-ring { position: absolute; inset: 0; animation: spin 60s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .seal-ring text { font-family: var(--sans); font-size: 11.5px; font-weight: 600; letter-spacing: 6.2px; fill: rgba(255,255,255,.55); text-transform: uppercase; }
+    .seal-core {
+      position: absolute; inset: 15%;
+      border-radius: 50%;
+      border: 1px solid rgba(194,154,91,.55);
+      background: radial-gradient(circle at 50% 35%, #1F1C17 0%, #0E0D0B 75%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      box-shadow: inset 0 0 0 10px #0E0D0B, inset 0 0 0 11px rgba(194,154,91,.25), 0 30px 80px rgba(0,0,0,.5);
+      text-align: center;
     }
-
-    .hero-icon { opacity: .1; }
+    .seal-letter { font-family: var(--serif); font-size: clamp(6rem, 14vw, 9rem); line-height: .9; color: var(--brass); font-weight: 500; }
+    .seal-name { font-size: .7rem; letter-spacing: .5em; text-transform: uppercase; color: rgba(255,255,255,.85); margin-top: 6px; padding-left: .5em; }
+    .seal-rule { width: 46px; height: 1px; background: var(--brass); margin: 14px auto 10px; opacity: .7; }
+    .seal-small { font-family: var(--serif); font-style: italic; font-size: 1.05rem; color: rgba(255,255,255,.55); }
 
     .hero-badge {
       position: absolute;
-      bottom: -20px;
-      left: -20px;
-      background: var(--white);
+      bottom: 4%; left: -4%;
+      background: var(--paper);
+      color: var(--ink);
       border-radius: var(--r);
-      padding: 16px 20px;
+      padding: 14px 18px;
       box-shadow: var(--shadow-lg);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 180px;
+      display: flex; align-items: center; gap: 12px;
+      min-width: 190px;
     }
     .hero-badge-icon {
-      width: 40px; height: 40px;
-      background: var(--gold);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      color: white;
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--ink); color: var(--brass);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .hero-badge-label { font-size: .7rem; color: var(--text3); font-weight: 500; }
-    .hero-badge-val { font-size: .95rem; color: var(--dark); font-weight: 600; }
+    .hero-badge-label { font-size: .62rem; color: var(--text3); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+    .hero-badge-val { font-size: .95rem; color: var(--ink); font-weight: 700; }
 
     .hero-badge2 {
-      position: absolute;
-      top: 24px;
-      right: -24px;
-      background: var(--dark2);
-      border: 1px solid rgba(255,255,255,.1);
+      position: absolute; top: 6%; right: -2%;
+      background: var(--ink2);
+      border: 1px solid rgba(194,154,91,.35);
       border-radius: var(--r);
       padding: 12px 16px;
       box-shadow: var(--shadow-lg);
+      text-align: center;
     }
-    .hero-badge2-text { font-size: .8rem; color: rgba(255,255,255,.8); font-weight: 500; }
-    .hero-badge2-stars { color: var(--gold); font-size: .9rem; margin-top: 2px; }
+    .hero-badge2-score { font-family: var(--serif); font-size: 1.7rem; font-weight: 600; color: var(--brass); line-height: 1; }
+    .hero-badge2-score small { font-size: .9rem; color: rgba(255,255,255,.5); }
+    .hero-badge2-text { font-size: .6rem; color: rgba(255,255,255,.65); font-weight: 600; letter-spacing: .16em; text-transform: uppercase; margin-top: 4px; }
 
     @media (max-width: 900px) {
-      .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+      .hero { padding-top: 110px; }
+      .hero-grid { grid-template-columns: 1fr; gap: 40px; }
       .hero-visual { order: -1; }
-      .hero-img-box { aspect-ratio: 16/9; max-height: 280px; }
-      .hero-badge { display: none; }
-      .hero-badge2 { display: none; }
+      .seal { width: min(280px, 78vw); }
+      .hero-badge2 { right: -6%; top: 0; }
+      .hero-badge { left: -8%; bottom: -2%; min-width: 0; }
     }
+    @media (max-width: 480px) {
+      .hero-stats > div { padding-right: 10px; }
+      .hero-stats > div + div { padding-left: 12px; }
+      .hero-stat-num { font-size: 1.8rem; }
+      .hero-stat-label { font-size: .58rem; letter-spacing: .1em; }
+      .hero-badge { left: 0; }
+      .hero-badge2 { right: 0; }
+    }
+
+    /* ── Marquee ────────────────────────────────────── */
+    .marquee { background: var(--brass); color: var(--ink); overflow: hidden; padding: 16px 0; border-block: 1px solid var(--brass-d); }
+    .marquee-track { display: flex; width: max-content; animation: marquee 38s linear infinite; }
+    .marquee-item {
+      display: flex; align-items: center; gap: 28px; padding-right: 28px;
+      font-family: var(--serif); font-size: 1.35rem; font-style: italic; font-weight: 600; white-space: nowrap;
+    }
+    .marquee-item::after { content: '✦'; font-style: normal; font-size: .8rem; }
+    @keyframes marquee { to { transform: translateX(-50%); } }
 
     /* ── About ──────────────────────────────────────── */
-    .about { padding: 100px 0; background: var(--white); }
-
-    .about-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 80px;
-      align-items: center;
-    }
+    .about { padding: 120px 0; background: var(--paper); }
+    .about-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 88px; align-items: center; }
 
     .about-img-wrap { position: relative; }
-
     .about-img {
-      width: 100%;
+      position: relative;
       aspect-ratio: 4/5;
+      background: var(--ink);
+      color: var(--white);
       border-radius: var(--r-lg);
-      background: linear-gradient(160deg, var(--off2) 0%, var(--off) 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 48px 40px;
+      display: flex; flex-direction: column; justify-content: space-between;
       overflow: hidden;
     }
+    .about-img::before {
+      content: ''; position: absolute; inset: 14px;
+      border: 1px solid rgba(194,154,91,.35); border-radius: 4px; pointer-events: none;
+    }
+    .def-word { font-family: var(--serif); font-size: clamp(2.6rem, 5vw, 3.4rem); font-weight: 600; line-height: 1; }
+    .def-phon { font-family: var(--serif); font-style: italic; color: var(--brass); font-size: 1.15rem; margin-top: 10px; }
+    .def-class { font-size: .68rem; letter-spacing: .25em; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: 24px; }
+    .def-body { font-family: var(--serif); font-size: 1.45rem; line-height: 1.4; color: rgba(255,255,255,.88); margin-top: 10px; }
+    .def-body em { color: var(--brass-l); }
+    .def-foot { display: flex; align-items: center; justify-content: space-between; font-size: .66rem; letter-spacing: .25em; text-transform: uppercase; color: rgba(255,255,255,.45); }
+    .def-foot svg { color: var(--brass); }
 
     .about-accent {
-      position: absolute;
-      bottom: -24px;
-      right: -24px;
-      width: 200px;
-      height: 200px;
-      background: var(--red);
-      border-radius: var(--r-lg);
-      z-index: -1;
-      opacity: .1;
+      position: absolute; bottom: -22px; right: -22px; width: 60%; height: 60%;
+      border: 1px solid var(--brass); border-radius: var(--r-lg); z-index: -1; opacity: .6;
     }
+    .about-img-wrap { z-index: 0; }
 
     .about-pill {
-      position: absolute;
-      top: 32px;
-      right: -20px;
-      background: var(--dark);
-      color: white;
-      border-radius: 50px;
-      padding: 10px 18px;
-      font-size: .82rem;
-      font-weight: 500;
-      box-shadow: var(--shadow);
-      white-space: nowrap;
+      position: absolute; top: 40px; right: -26px;
+      background: var(--brass); color: var(--ink);
+      padding: 10px 18px; font-size: .68rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+      box-shadow: var(--shadow); white-space: nowrap; border-radius: 2px;
     }
 
-    .about-features {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-top: 32px;
-    }
-
-    .about-feat { display: flex; align-items: flex-start; gap: 10px; }
-
+    .about-features { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 32px; margin-top: 44px; padding-top: 36px; border-top: 1px solid var(--border); }
+    .about-feat { display: flex; align-items: flex-start; gap: 14px; }
     .about-feat-icon {
-      width: 32px; height: 32px;
-      border-radius: 8px;
-      background: var(--off2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      color: var(--red);
-      margin-top: 2px;
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1px solid var(--brass);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--brass-d);
     }
+    .about-feat-title { font-family: var(--serif); font-size: 1.2rem; font-weight: 600; color: var(--ink); line-height: 1.2; }
+    .about-feat-text { font-size: .84rem; color: var(--text3); margin-top: 4px; }
 
-    .about-feat-title { font-size: .88rem; font-weight: 600; color: var(--dark); }
-    .about-feat-text { font-size: .8rem; color: var(--text3); margin-top: 2px; }
-
-    @media (max-width: 768px) {
-      .about-grid { grid-template-columns: 1fr; gap: 40px; }
-      .about-pill { display: none; }
+    @media (max-width: 860px) {
+      .about { padding: 88px 0; }
+      .about-grid { grid-template-columns: 1fr; gap: 56px; }
+      .about-img { aspect-ratio: auto; min-height: 380px; padding: 40px 32px; }
+      .about-pill { right: 12px; top: -16px; }
+      .about-accent { right: -10px; bottom: -10px; }
     }
+    @media (max-width: 480px) { .about-features { grid-template-columns: 1fr; } }
 
-    /* ── Services (dark) ────────────────────────────── */
-    .services {
-      padding: 100px 0;
-      background: var(--dark);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .services::before {
-      content: '';
-      position: absolute;
-      top: -80px; left: -80px;
-      width: 500px; height: 500px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(139,38,53,.1) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
+    /* ── Services (dark menu board) ─────────────────── */
+    .services { padding: 120px 0; background: var(--ink); color: var(--white); position: relative; overflow: hidden; }
     .services::after {
-      content: '';
-      position: absolute;
-      bottom: -80px; right: -80px;
-      width: 420px; height: 420px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(196,154,60,.07) 0%, transparent 70%);
-      pointer-events: none;
+      content: ''; position: absolute; bottom: -120px; right: -120px; width: 480px; height: 480px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(194,154,91,.09) 0%, transparent 70%); pointer-events: none;
       transform: translate(calc(var(--px, 0) * 22px), calc(var(--py, 0) * 14px));
       transition: transform 1s cubic-bezier(0.23, 1, 0.32, 1);
     }
 
-    .services-head {
-      text-align: center;
-      margin-bottom: 56px;
-      position: relative;
-      z-index: 1;
-    }
-    .services-head .section-tag { color: var(--gold); }
-    .services-head .section-title { color: var(--white); }
-    .services-head .section-sub { color: rgba(255,255,255,.6); margin: 0 auto; }
+    .services-head { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; margin-bottom: 64px; position: relative; z-index: 1; }
+    .services-head .section-tag { color: var(--brass); }
+    .services-head .section-title { color: var(--white); margin-bottom: 0; }
+    .services-head .section-title em { color: var(--brass); }
+    .services-head .section-sub { color: rgba(255,255,255,.6); }
 
-    .services-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      position: relative;
-      z-index: 1;
-    }
+    .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 72px; position: relative; z-index: 1; }
 
     .svc-card {
-      background: rgba(255,255,255,.05);
-      border-radius: var(--r-lg);
-      padding: 32px 28px;
-      border: 1px solid rgba(255,255,255,.08);
-      transition: all .3s;
-      cursor: default;
+      display: grid; grid-template-columns: 52px 1fr auto; gap: 4px 20px; align-items: start;
+      padding: 28px 0; border-bottom: 1px solid var(--line-d);
+      transition: background .3s;
     }
-    .svc-card:hover {
-      background: rgba(255,255,255,.09);
-      border-color: rgba(255,255,255,.16);
-      box-shadow: 0 12px 40px rgba(0,0,0,.35);
-      transform: translateY(-4px);
-    }
-    .svc-card:hover .svc-icon { background: var(--red); color: white; }
-
+    .svc-card:hover .svc-icon { background: var(--brass); color: var(--ink); border-color: var(--brass); }
     .svc-icon {
-      width: 52px; height: 52px;
-      border-radius: 14px;
-      background: rgba(255,255,255,.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #D4899A;
-      margin-bottom: 20px;
-      transition: all .3s;
+      grid-row: span 3;
+      width: 52px; height: 52px; border-radius: 50%;
+      border: 1px solid rgba(194,154,91,.45); color: var(--brass);
+      display: flex; align-items: center; justify-content: center; transition: all .3s;
+    }
+    .svc-title { font-family: var(--serif); font-size: 1.55rem; font-weight: 600; color: var(--white); line-height: 1.15; }
+    .svc-price { font-family: var(--serif); font-size: 1.45rem; font-weight: 600; color: var(--brass); white-space: nowrap; line-height: 1.15; }
+    .svc-meta { grid-column: 2 / -1; font-size: .66rem; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.4); }
+    .svc-text { grid-column: 2 / -1; font-size: .9rem; color: rgba(255,255,255,.6); line-height: 1.7; margin-top: 6px; }
+    .svc-link {
+      grid-column: 2 / -1; justify-self: start;
+      display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
+      font-size: .68rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--brass);
+      background: none; border: none; cursor: pointer; font-family: var(--sans); padding: 0; transition: gap .2s;
+    }
+    .svc-link:hover { gap: 12px; color: var(--brass-l); }
+
+    .services-note { margin-top: 40px; font-size: .82rem; color: rgba(255,255,255,.45); position: relative; z-index: 1; }
+    .services-note a { color: var(--brass); border-bottom: 1px solid rgba(194,154,91,.4); }
+
+    @media (max-width: 900px) {
+      .services { padding: 88px 0; }
+      .services-head { grid-template-columns: 1fr; gap: 20px; margin-bottom: 40px; }
+      .services-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .svc-card { grid-template-columns: 1fr auto; }
+      .svc-icon { display: none; }
+      .svc-meta, .svc-text, .svc-link { grid-column: 1 / -1; }
+      .svc-title { font-size: 1.35rem; }
     }
 
-    .svc-title { font-size: 1.05rem; font-weight: 600; color: var(--white); margin-bottom: 8px; font-family: 'Outfit', sans-serif; }
-    .svc-text { font-size: .88rem; color: rgba(255,255,255,.6); line-height: 1.65; }
-    .svc-link { display: inline-flex; align-items: center; gap: 4px; font-size: .83rem; color: var(--gold); font-weight: 500; margin-top: 16px; transition: gap .2s; }
-    .svc-link:hover { gap: 8px; }
-
-    @media (max-width: 900px) { .services-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 560px) { .services-grid { grid-template-columns: 1fr; } }
+    /* ── Rating band ────────────────────────────────── */
+    .rating { padding: 96px 0; background: var(--bone); text-align: center; position: relative; }
+    .rating-score { font-family: var(--serif); font-size: clamp(5rem, 14vw, 8.5rem); font-weight: 600; line-height: 1; color: var(--ink); }
+    .rating-score span { color: var(--brass-d); font-size: .45em; }
+    .rating-stars { color: var(--brass-d); letter-spacing: .3em; font-size: 1.1rem; margin: 14px 0 18px; }
+    .rating-quote { font-family: var(--serif); font-style: italic; font-size: clamp(1.4rem, 3vw, 2rem); color: var(--text); max-width: 680px; margin: 0 auto; line-height: 1.35; }
+    .rating-src { font-size: .7rem; letter-spacing: .24em; text-transform: uppercase; color: var(--text3); margin-top: 22px; }
+    .rating-links { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
+    .btn-dark { background: var(--ink); color: var(--white); }
+    .btn-dark:hover { background: var(--ink3); transform: translateY(-2px); }
+    .btn-line { background: transparent; color: var(--ink); border-color: var(--ink); }
+    .btn-line:hover { background: var(--ink); color: var(--white); }
 
     /* ── Social links ────────────────────────────────── */
-    .social-links {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
+    .social-links { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
     .social-link {
-      width: 42px; height: 42px;
-      border-radius: 11px;
-      background: var(--white);
-      border: 1.5px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text2);
-      transition: all .2s;
-      text-decoration: none;
-      flex-shrink: 0;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: transparent; border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text2); transition: all .2s; flex-shrink: 0;
     }
-    .social-link:hover {
-      border-color: var(--red);
-      color: var(--red);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,.1);
-    }
+    .social-link:hover { border-color: var(--ink); background: var(--ink); color: var(--brass); transform: translateY(-2px); }
 
     /* ── Booking ────────────────────────────────────── */
-    .booking {
-      padding: 100px 0;
-      background: var(--white);
-    }
+    .booking { padding: 120px 0; background: var(--paper); }
+    .booking-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 72px; align-items: start; }
+    .booking-info { position: sticky; top: 110px; }
 
-    .booking-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.4fr;
-      gap: 64px;
-      align-items: start;
-    }
-
-    .booking-info { position: sticky; top: 100px; }
-
-    .booking-steps { margin-top: 36px; display: flex; flex-direction: column; gap: 20px; }
-
-    .booking-step { display: flex; align-items: flex-start; gap: 14px; }
+    .booking-steps { margin-top: 40px; display: flex; flex-direction: column; gap: 0; }
+    .booking-step { display: flex; align-items: flex-start; gap: 18px; padding: 18px 0; border-bottom: 1px solid var(--border); }
+    .booking-step:first-child { border-top: 1px solid var(--border); }
     .booking-step-num {
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      background: var(--red);
-      color: white;
-      font-size: .8rem;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      font-family: var(--serif); font-size: 1.6rem; font-weight: 600; font-style: italic;
+      color: var(--brass-d); line-height: 1; width: 32px; flex-shrink: 0;
     }
-    .booking-step-title { font-size: .9rem; font-weight: 600; color: var(--dark); }
-    .booking-step-text { font-size: .82rem; color: var(--text3); margin-top: 2px; }
+    .booking-step-title { font-size: .95rem; font-weight: 700; color: var(--ink); }
+    .booking-step-text { font-size: .84rem; color: var(--text3); margin-top: 2px; }
 
     .booking-card {
-      background: var(--off);
-      border: 1.5px solid var(--border);
-      border-radius: var(--r-lg);
-      padding: 40px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--brass);
+      border-radius: var(--r);
+      padding: 44px;
+      box-shadow: 0 20px 60px rgba(14,13,11,.06);
     }
 
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-    .form-group { margin-bottom: 20px; }
+    .form-group { margin-bottom: 22px; }
     .form-group label {
-      display: block;
-      font-size: .8rem;
-      font-weight: 600;
-      color: var(--text2);
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      margin-bottom: 6px;
+      display: block; font-size: .66rem; font-weight: 700; color: var(--text2);
+      letter-spacing: .2em; text-transform: uppercase; margin-bottom: 8px;
     }
     .form-group input,
     .form-group select,
     .form-group textarea {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: var(--r);
-      font-family: 'Outfit', sans-serif;
-      font-size: .93rem;
-      color: var(--text);
-      background: var(--white);
-      outline: none;
-      transition: border-color .2s, box-shadow .2s;
-      appearance: none;
+      width: 100%; padding: 13px 14px;
+      border: 1px solid var(--border); border-radius: var(--r);
+      font-family: var(--sans); font-size: .95rem; color: var(--text);
+      background: var(--paper); outline: none;
+      transition: border-color .2s, box-shadow .2s, background .2s; appearance: none;
     }
     .form-group input:focus,
     .form-group select:focus,
-    .form-group textarea:focus {
-      border-color: var(--red);
-      box-shadow: 0 0 0 3px rgba(139,38,53,.1);
-    }
+    .form-group textarea:focus { border-color: var(--brass); background: var(--white); box-shadow: 0 0 0 3px rgba(194,154,91,.18); }
     .form-group textarea { resize: vertical; min-height: 90px; }
 
     .time-slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
     .time-slot {
-      padding: 8px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 50px;
-      font-size: .83rem;
-      font-weight: 500;
-      color: var(--text2);
-      cursor: pointer;
-      transition: all .2s;
-      background: var(--white);
+      padding: 9px 15px; border: 1px solid var(--border); border-radius: 2px;
+      font-size: .85rem; font-weight: 600; color: var(--text2); cursor: pointer;
+      transition: all .2s; background: var(--paper); font-family: var(--sans);
     }
-    .time-slot:hover { border-color: var(--red); color: var(--red); }
-    .time-slot.selected { background: var(--red); border-color: var(--red); color: white; }
-    .time-slot.disabled { opacity: .35; pointer-events: none; }
-
-    .slots-hint { font-size: .8rem; color: var(--text3); margin-top: 6px; }
+    .time-slot:hover { border-color: var(--ink); color: var(--ink); }
+    .time-slot.selected { background: var(--ink); border-color: var(--ink); color: var(--brass); }
+    .time-slot.disabled { opacity: .35; pointer-events: none; text-decoration: line-through; }
+    .slots-hint { font-size: .8rem; color: var(--text3); margin-top: 8px; }
 
     .form-submit {
-      width: 100%;
-      padding: 15px;
-      background: var(--gold);
-      color: white;
-      border: none;
-      border-radius: 50px;
-      font-family: 'Outfit', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all .25s;
-      margin-top: 8px;
-      box-shadow: 0 4px 18px rgba(196,154,60,.3);
+      width: 100%; padding: 17px;
+      background: var(--ink); color: var(--white);
+      border: none; border-radius: 2px;
+      font-family: var(--sans); font-size: .78rem; font-weight: 700; letter-spacing: .22em; text-transform: uppercase;
+      cursor: pointer; transition: all .25s; margin-top: 8px;
     }
-    .form-submit:hover { background: var(--gold-l); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(196,154,60,.4); }
+    .form-submit:hover { background: var(--brass); color: var(--ink); transform: translateY(-2px); }
     .form-submit:disabled { opacity: .6; transform: none; cursor: not-allowed; }
 
-    .form-msg {
-      padding: 14px 18px;
-      border-radius: var(--r);
-      font-size: .88rem;
-      margin-top: 16px;
-      display: none;
+    .form-msg { padding: 14px 18px; border-radius: var(--r); font-size: .88rem; margin-top: 16px; display: none; }
+    .form-msg.ok { background: #EEF6EF; color: #1F6B3A; border: 1px solid #C4E2CB; display: block; }
+    .form-msg.err { background: #FBEFEE; color: #9B2C24; border: 1px solid #F0C9C5; display: block; }
+
+    .consent-box {
+      margin: 4px 0 16px; padding: 14px 16px; background: var(--bone);
+      border: 1px solid var(--border); border-radius: var(--r);
+      font-size: .83rem; color: var(--text2); line-height: 1.55;
     }
-    .form-msg.ok { background: #e8f8f0; color: #1a7a45; border: 1px solid #b8e8d0; display: block; }
-    .form-msg.err { background: #fdf0f0; color: #c0392b; border: 1px solid #f5c6c6; display: block; }
 
     @media (max-width: 900px) {
-      .booking-grid { grid-template-columns: 1fr; }
+      .booking { padding: 88px 0; }
+      .booking-grid { grid-template-columns: 1fr; gap: 48px; }
       .booking-info { position: static; }
     }
     @media (max-width: 560px) {
-      .booking-card { padding: 24px; }
-      .form-row { grid-template-columns: 1fr; }
+      .booking-card { padding: 26px 20px; }
+      .form-row { grid-template-columns: 1fr; gap: 0; }
     }
 
     /* ── Contact ────────────────────────────────────── */
-    .contact {
-      padding: 100px 0;
-      background: var(--off);
-    }
+    .contact { padding: 120px 0; background: var(--bone); }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 72px; align-items: start; }
 
-    .contact-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.5fr;
-      gap: 64px;
-      align-items: start;
-    }
-
-    .contact-items { display: flex; flex-direction: column; gap: 20px; margin-top: 32px; }
-
-    .contact-item { display: flex; align-items: flex-start; gap: 14px; }
+    .contact-items { display: flex; flex-direction: column; gap: 22px; margin-top: 36px; }
+    .contact-item { display: flex; align-items: flex-start; gap: 16px; }
     .contact-item-icon {
-      width: 44px; height: 44px;
-      border-radius: 12px;
-      background: var(--white);
-      border: 1.5px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--red);
-      flex-shrink: 0;
+      width: 46px; height: 46px; border-radius: 50%;
+      background: var(--ink); color: var(--brass);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .contact-item-label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); }
-    .contact-item-val { font-size: .95rem; color: var(--dark); font-weight: 500; margin-top: 2px; }
+    .contact-item-label { font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .22em; color: var(--text3); }
+    .contact-item-val { font-size: 1rem; color: var(--ink); font-weight: 600; margin-top: 2px; }
+    .contact-item-val a:hover { color: var(--brass-d); }
 
     .contact-map {
-      border-radius: var(--r-lg);
-      overflow: hidden;
-      border: 1.5px solid var(--border);
-      height: 360px;
-      background: linear-gradient(135deg, var(--off2) 0%, var(--border) 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text3);
-      font-size: .9rem;
+      border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--border);
+      height: 460px; background: var(--bone2);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text3); font-size: .9rem;
+      filter: grayscale(.35) contrast(1.05);
     }
 
     .hours-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 28px;
-      background: var(--white);
-      border-radius: var(--r);
-      padding: 20px;
-      border: 1.5px solid var(--border);
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 32px;
+      background: var(--paper); border-radius: var(--r); padding: 18px 22px; border: 1px solid var(--border);
     }
-    .hours-row { display: flex; justify-content: space-between; font-size: .83rem; padding: 6px 0; border-bottom: 1px solid var(--off2); grid-column: 1 / -1; }
+    .hours-row { display: flex; justify-content: space-between; gap: 12px; font-size: .86rem; padding: 9px 0; border-bottom: 1px dashed var(--border); grid-column: 1 / -1; }
     .hours-row:last-child { border-bottom: none; }
     .hours-day { color: var(--text2); font-weight: 500; }
-    .hours-time { color: var(--dark); font-weight: 600; }
+    .hours-time { color: var(--ink); font-weight: 700; text-align: right; }
 
-    @media (max-width: 768px) { .contact-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 860px) {
+      .contact { padding: 88px 0; }
+      .contact-grid { grid-template-columns: 1fr; gap: 48px; }
+      .contact-map { height: 340px; }
+    }
 
     /* ── Footer ─────────────────────────────────────── */
-    footer {
-      background: var(--dark);
-      padding: 40px 0;
-    }
-    .footer-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-    .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--white); }
-    .footer-logo span { color: var(--gold); }
-    .footer-copy { font-size: .8rem; color: rgba(255,255,255,.4); }
-    .footer-links { display: flex; gap: 20px; }
-    .footer-links a { font-size: .8rem; color: rgba(255,255,255,.5); transition: color .2s; }
-    .footer-links a:hover { color: var(--white); }
+    footer { background: var(--ink); padding: 64px 0 36px; color: var(--white); }
+    .footer-top { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding-bottom: 36px; border-bottom: 1px solid var(--line-d); }
+    .footer-motto { font-family: var(--serif); font-style: italic; font-size: 1.5rem; color: rgba(255,255,255,.7); }
+    .footer-motto em { color: var(--brass); }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-top: 28px; }
+    .footer-copy { font-size: .78rem; color: rgba(255,255,255,.4); }
+    .footer-links { display: flex; gap: 22px; flex-wrap: wrap; }
+    .footer-links a { font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.5); transition: color .2s; }
+    .footer-links a:hover { color: var(--brass-l); }
 
     /* ── Custom calendar ───────────────────────────── */
     .cal-widget {
-      background: var(--white);
-      border: 1.5px solid var(--border);
-      border-radius: var(--r);
-      overflow: hidden;
-      max-width: 308px;
-      user-select: none;
+      background: var(--white); border: 1px solid var(--border); border-radius: var(--r);
+      overflow: hidden; max-width: 320px; user-select: none;
     }
-    .cal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 14px;
-      background: var(--dark);
-    }
+    .cal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--ink); }
     .cal-nav {
-      background: none;
-      border: none;
-      color: rgba(255,255,255,.7);
-      cursor: pointer;
-      font-size: 1.3rem;
-      padding: 2px 8px;
-      border-radius: 4px;
-      line-height: 1;
-      transition: color .2s, background .2s;
+      background: none; border: none; color: rgba(255,255,255,.7); cursor: pointer;
+      font-size: 1.3rem; padding: 2px 8px; border-radius: 2px; line-height: 1; transition: color .2s, background .2s;
     }
-    .cal-nav:hover { color: var(--white); background: rgba(255,255,255,.12); }
-    .cal-month { font-size: .88rem; font-weight: 600; color: var(--white); letter-spacing: .02em; }
-    .cal-dow-row {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      background: var(--off2);
-      padding: 6px 6px 4px;
-    }
-    .cal-dow {
-      text-align: center;
-      font-size: .68rem;
-      font-weight: 600;
-      color: var(--text3);
-      letter-spacing: .06em;
-      text-transform: uppercase;
-    }
-    .cal-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      padding: 4px 6px 8px;
-      gap: 1px;
-    }
+    .cal-nav:hover { color: var(--brass); background: rgba(255,255,255,.08); }
+    .cal-month { font-family: var(--serif); font-size: 1.1rem; font-weight: 600; color: var(--white); letter-spacing: .04em; }
+    .cal-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--bone); padding: 7px 6px 5px; }
+    .cal-dow { text-align: center; font-size: .62rem; font-weight: 700; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); padding: 4px 6px 8px; gap: 1px; }
     .cal-day {
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      font-size: .82rem;
-      cursor: pointer;
-      border: none;
-      background: none;
-      color: var(--text2);
-      font-family: 'Outfit', sans-serif;
-      transition: background .15s, color .15s;
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; font-size: .84rem; cursor: pointer; border: none; background: none;
+      color: var(--text); font-family: var(--sans); font-weight: 500; transition: background .15s, color .15s;
     }
-    .cal-day.available:not(.selected):hover { background: var(--off2); color: var(--red); }
+    .cal-day.available:not(.selected):hover { background: var(--bone); color: var(--brass-d); }
     .cal-day.unavailable,
     .cal-day.past { color: var(--border); cursor: default; }
-    .cal-day.today { border: 1.5px solid var(--red); color: var(--red); font-weight: 600; }
+    .cal-day.today { border: 1px solid var(--brass); color: var(--brass-d); font-weight: 700; }
     .cal-day.today.unavailable,
     .cal-day.today.past { border-color: var(--border); color: var(--border); }
-    .cal-day.selected { background: var(--red) !important; color: var(--white) !important; font-weight: 600; }
+    .cal-day.selected { background: var(--ink) !important; color: var(--brass) !important; font-weight: 700; }
     .cal-day.empty { cursor: default; }
 
-    /* ── Service option cards ───────────────────────── */
+    /* ── Service option cards (booking form) ────────── */
     .svc-option {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 3px;
-      padding: 12px 16px;
-      border: 1.5px solid var(--border);
-      border-radius: var(--r);
-      background: var(--white);
-      cursor: pointer;
-      transition: all .2s;
-      text-align: left;
-      font-family: 'Outfit', sans-serif;
-      min-width: 130px;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+      padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--r);
+      background: var(--paper); cursor: pointer; transition: all .2s; text-align: left;
+      font-family: var(--sans); min-width: 140px;
     }
-    .svc-option:hover { border-color: var(--red); background: var(--off); }
-    .svc-option.selected { border-color: var(--red); background: var(--off2); box-shadow: 0 0 0 2px rgba(139,38,53,.15); }
-    .svc-option-name { font-size: .9rem; font-weight: 600; color: var(--dark); }
-    .svc-option-dur  { font-size: .75rem; color: var(--text3); }
-    .svc-option-price { font-size: .82rem; font-weight: 600; color: var(--red); margin-top: 2px; }
-    .svc-option-desc { font-size: .75rem; color: var(--text2); line-height: 1.4; margin-top: 2px; max-width: 180px; }
+    .svc-option:hover { border-color: var(--ink); }
+    .svc-option.selected { border-color: var(--ink); background: var(--ink); }
+    .svc-option.selected .svc-option-name { color: var(--white); }
+    .svc-option.selected .svc-option-dur,
+    .svc-option.selected .svc-option-desc { color: rgba(255,255,255,.6); }
+    .svc-option.selected .svc-option-price { color: var(--brass); }
+    .svc-option-name { font-size: .92rem; font-weight: 700; color: var(--ink); }
+    .svc-option-dur  { font-size: .74rem; color: var(--text3); }
+    .svc-option-price { font-family: var(--serif); font-size: 1.1rem; font-weight: 700; color: var(--brass-d); margin-top: 2px; }
+    .svc-option-desc { font-size: .75rem; color: var(--text2); line-height: 1.4; margin-top: 2px; max-width: 190px; }
 
     /* ── Mobile nav overlay ─────────────────────────── */
     .mobile-menu {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(13,11,8,.97);
-      z-index: 99;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 32px;
+      display: none; position: fixed; inset: 0; background: rgba(14,13,11,.98); z-index: 99;
+      flex-direction: column; align-items: center; justify-content: center; gap: 30px;
     }
     .mobile-menu.open { display: flex; }
-    .mobile-menu a { font-size: 1.2rem; color: var(--white); font-weight: 500; }
+    .mobile-menu a:not(.btn) { font-family: var(--serif); font-size: 2rem; color: var(--white); font-weight: 500; }
+    .mobile-menu a:not(.btn):hover { color: var(--brass); }
     .mobile-menu-close {
-      position: absolute;
-      top: 24px; right: 24px;
-      background: none;
-      border: none;
-      color: white;
-      font-size: 1.6rem;
-      cursor: pointer;
+      position: absolute; top: 22px; right: 22px; background: none; border: none;
+      color: white; font-size: 1.6rem; cursor: pointer;
     }
   </style>
 </head>
@@ -875,12 +648,18 @@
   <!-- ── Nav ──────────────────────────────────────────── -->
   <nav class="nav" id="nav">
     <div class="container nav-inner">
-      <a href="#" class="nav-logo">The <span>Barber</span></a>
+      <a href="#inicio" class="nav-logo" aria-label="Intemporal Barbearia — início">
+        <span class="nav-logo-mark">I</span>
+        <span class="nav-logo-text">
+          <span class="nav-logo-name">Intemporal</span>
+          <span class="nav-logo-sub">Barbearia</span>
+        </span>
+      </a>
       <ul class="nav-links">
-        <li><a href="#sobre">Sobre Nós</a></li>
+        <li><a href="#sobre">Sobre</a></li>
         <li><a href="#servicos">Serviços</a></li>
         <li><a href="#contactos">Contactos</a></li>
-        <li><a href="#agendamento" class="btn btn-primary nav-cta">Reservar</a></li>
+        <li><a href="#agendamento" class="btn btn-primary nav-cta">Marcar</a></li>
       </ul>
       <button class="nav-burger" id="navBurger" aria-label="Menu">
         <span></span><span></span><span></span>
@@ -890,11 +669,11 @@
 
   <!-- Mobile menu -->
   <div class="mobile-menu" id="mobileMenu">
-    <button class="mobile-menu-close" id="mobileClose">✕</button>
-    <a href="#sobre" class="mobile-link">Sobre Nós</a>
+    <button class="mobile-menu-close" id="mobileClose" aria-label="Fechar menu">✕</button>
+    <a href="#sobre" class="mobile-link">Sobre</a>
     <a href="#servicos" class="mobile-link">Serviços</a>
     <a href="#contactos" class="mobile-link">Contactos</a>
-    <a href="#agendamento" class="btn btn-primary mobile-link">Reservar Agora</a>
+    <a href="#agendamento" class="btn btn-primary mobile-link">Marcar agora</a>
   </div>
 
   <!-- ── Hero ─────────────────────────────────────────── -->
@@ -902,134 +681,152 @@
     <div class="container">
       <div class="hero-grid">
         <div class="hero-content">
-          <div class="hero-tag">Barbearia de Referência</div>
+          <div class="hero-tag">Barbearia · Rua de Palme 277</div>
           <h1 class="hero-title">
-            O teu estilo,<br>
-            a nossa <em>arte</em>
+            O tempo passa.<br>
+            O estilo <em>fica.</em>
           </h1>
           <p class="hero-sub">
-            Barbearia premium onde tradição e estilo moderno se encontram.
-            Cortes precisos, barba cuidada e uma experiência pensada para ti, do início ao fim.
+            Na Intemporal tratamos cada corte como uma assinatura: técnica clássica,
+            olhar atual e o cuidado de quem leva o ofício a sério. Sem pressas, sem modas passageiras.
           </p>
           <div class="hero-btns">
             <a href="#agendamento" class="btn btn-primary">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-              Reservar Agora
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              Marcar agora
             </a>
-            <a href="#sobre" class="btn btn-outline">Saber Mais</a>
+            <a href="#servicos" class="btn btn-outline">Ver serviços</a>
           </div>
           <div class="hero-stats">
             <div>
-              <div class="hero-stat-num">8<span>+</span></div>
-              <div class="hero-stat-label">Anos de experiência</div>
+              <div class="hero-stat-num">10<span>/10</span></div>
+              <div class="hero-stat-label">Avaliação Noona</div>
             </div>
             <div>
-              <div class="hero-stat-num">3200<span>+</span></div>
-              <div class="hero-stat-label">Clientes satisfeitos</div>
+              <div class="hero-stat-num">24<span>h</span></div>
+              <div class="hero-stat-label">Marcação online</div>
             </div>
             <div>
-              <div class="hero-stat-num">98<span>%</span></div>
-              <div class="hero-stat-label">Taxa de satisfação</div>
+              <div class="hero-stat-num">1<span>:1</span></div>
+              <div class="hero-stat-label">Atenção total</div>
             </div>
           </div>
         </div>
 
         <div class="hero-visual">
-          <div class="hero-card-wrap">
-            <div class="hero-img-box">
-              <!-- Replace with real barber photo -->
-              <svg class="hero-icon" width="180" height="180" viewBox="0 0 100 100" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="30" cy="28" r="9"/>
-                <circle cx="70" cy="28" r="9"/>
-                <line x1="36" y1="34" x2="64" y2="66"/>
-                <line x1="64" y1="34" x2="36" y2="66"/>
-                <line x1="26" y1="50" x2="74" y2="50"/>
-                <path d="M20 72 Q50 85 80 72"/>
-              </svg>
+          <div class="seal" aria-hidden="true">
+            <svg class="seal-ring" viewBox="0 0 400 400">
+              <defs>
+                <path id="sealCircle" d="M200,200 m-176,0 a176,176 0 1,1 352,0 a176,176 0 1,1 -352,0"/>
+              </defs>
+              <circle cx="200" cy="200" r="196" fill="none" stroke="rgba(194,154,91,.35)" stroke-width="1"/>
+              <circle cx="200" cy="200" r="158" fill="none" stroke="rgba(194,154,91,.2)" stroke-width="1" stroke-dasharray="2 6"/>
+              <text><textPath href="#sealCircle" startOffset="0">Intemporal ✦ Barbearia ✦ Corte ✦ Barba ✦ Navalha ✦ Rua de Palme 277 ✦</textPath></text>
+            </svg>
+            <div class="seal-core">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#C29A5B" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px;opacity:.85"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+              <div class="seal-letter">I</div>
+              <div class="seal-name">Intemporal</div>
+              <div class="seal-rule"></div>
+              <div class="seal-small">barbearia</div>
             </div>
-            <div class="hero-badge">
-              <div class="hero-badge-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              </div>
-              <div>
-                <div class="hero-badge-label">Próxima disponibilidade</div>
-                <div class="hero-badge-val" id="nextSlotBadge">—</div>
-              </div>
+          </div>
+          <div class="hero-badge">
+            <div class="hero-badge-icon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
-            <div class="hero-badge2">
-              <div class="hero-badge2-text">Avaliação dos clientes</div>
-              <div class="hero-badge2-stars">★★★★★</div>
+            <div>
+              <div class="hero-badge-label">Próxima vaga</div>
+              <div class="hero-badge-val" id="nextSlotBadge">—</div>
             </div>
+          </div>
+          <div class="hero-badge2">
+            <div class="hero-badge2-score">10<small>/10</small></div>
+            <div class="hero-badge2-text">★★★★★ Clientes</div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ── Sobre Nós ──────────────────────────────────────── -->
+  <!-- ── Marquee ──────────────────────────────────────── -->
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span class="marquee-item">Corte clássico</span><span class="marquee-item">Degradê</span><span class="marquee-item">Barba à navalha</span><span class="marquee-item">Toalha quente</span><span class="marquee-item">Acabamentos de detalhe</span><span class="marquee-item">Estilo intemporal</span>
+      <span class="marquee-item">Corte clássico</span><span class="marquee-item">Degradê</span><span class="marquee-item">Barba à navalha</span><span class="marquee-item">Toalha quente</span><span class="marquee-item">Acabamentos de detalhe</span><span class="marquee-item">Estilo intemporal</span>
+    </div>
+  </div>
+
+  <!-- ── Sobre ─────────────────────────────────────────── -->
   <section class="about" id="sobre">
     <div class="container">
       <div class="about-grid">
         <div class="about-img-wrap reveal">
           <div class="about-img">
-            <!-- Replace with real photo -->
-            <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="#D5C8B5" stroke-width="1">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
+            <div>
+              <div class="def-word">in·tem·po·ral</div>
+              <div class="def-phon">/ĩ.tẽ.puˈɾaɫ/</div>
+              <div class="def-class">adjetivo</div>
+              <p class="def-body">Que não está sujeito ao tempo; que <em>não passa de moda.</em></p>
+            </div>
+            <div class="def-foot">
+              <span>Intemporal Barbearia</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+            </div>
           </div>
           <div class="about-accent"></div>
-          <div class="about-pill">✂️ Mestres do Ofício</div>
+          <div class="about-pill">✦ Avaliação 10/10</div>
         </div>
 
         <div class="about-text">
-          <span class="section-tag reveal">Sobre Nós</span>
-          <h2 class="section-title reveal reveal-delay-1">Paixão pelo ofício,<br>mestria no detalhe</h2>
+          <span class="section-tag reveal">A Casa</span>
+          <h2 class="section-title reveal reveal-delay-1">Um nome que é<br>uma <em>promessa</em></h2>
           <p class="section-sub reveal reveal-delay-2">
-            Somos uma equipa de barbeiros especializados, apaixonados pelo que fazemos.
-            Com anos de prática e formação contínua, dominamos técnicas clássicas e as
-            tendências mais modernas.
+            Intemporal é aquilo que não envelhece. É assim que olhamos para cada cliente que se senta
+            na nossa cadeira: um corte que funciona hoje, amanhã e daqui a um mês — bem desenhado,
+            bem acabado e pensado para ti.
           </p>
           <p class="section-sub reveal reveal-delay-2" style="margin-top:16px">
-            Cada cliente é único. Por isso, cada visita começa com uma conversa —
-            porque o melhor corte é aquele que te representa a ti.
+            Juntamos as técnicas da barbearia tradicional — tesoura, navalha e toalha quente —
+            ao rigor dos cortes de hoje. Cada visita começa com uma conversa e acaba com um espelho
+            que confirma: era mesmo isto.
           </p>
 
           <div class="about-features">
             <div class="about-feat reveal reveal-delay-3">
               <div class="about-feat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
               </div>
               <div>
-                <div class="about-feat-title">Técnicas Clássicas</div>
-                <div class="about-feat-text">Mestria em cortes atemporais</div>
+                <div class="about-feat-title">Técnica clássica</div>
+                <div class="about-feat-text">Tesoura, máquina e navalha com precisão</div>
               </div>
             </div>
             <div class="about-feat reveal reveal-delay-3">
               <div class="about-feat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
               </div>
               <div>
-                <div class="about-feat-title">Produtos Premium</div>
-                <div class="about-feat-text">Marcas selecionadas de topo</div>
+                <div class="about-feat-title">Olhar atual</div>
+                <div class="about-feat-text">Degradês e estilos de hoje, bem executados</div>
               </div>
             </div>
             <div class="about-feat reveal reveal-delay-4">
               <div class="about-feat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               </div>
               <div>
-                <div class="about-feat-title">Horários Flexíveis</div>
-                <div class="about-feat-text">Adaptamos à tua agenda</div>
+                <div class="about-feat-title">Sem esperas</div>
+                <div class="about-feat-text">Marca online e chega à hora certa</div>
               </div>
             </div>
             <div class="about-feat reveal reveal-delay-4">
               <div class="about-feat-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
               </div>
               <div>
-                <div class="about-feat-title">Ambiente Exclusivo</div>
-                <div class="about-feat-text">Espaço moderno e acolhedor</div>
+                <div class="about-feat-title">Detalhe a sério</div>
+                <div class="about-feat-text">Contornos, acabamentos e cuidado no fim</div>
               </div>
             </div>
           </div>
@@ -1042,65 +839,67 @@
   <section class="services" id="servicos">
     <div class="container">
       <div class="services-head">
-        <span class="section-tag reveal">Os Nossos Serviços</span>
-        <h2 class="section-title reveal reveal-delay-1">Tratamentos para<br>cada estilo</h2>
-        <p class="section-sub reveal reveal-delay-2">Do corte clássico ao look mais arrojado, cada serviço é executado com precisão e dedicação. Para que saias sempre como quiseste entrar.</p>
+        <div>
+          <span class="section-tag reveal">Serviços</span>
+          <h2 class="section-title reveal reveal-delay-1">A carta da<br><em>casa</em></h2>
+        </div>
+        <p class="section-sub reveal reveal-delay-2">Do corte clássico ao degradê mais limpo, da barba aparada ao ritual completo com navalha e toalha quente. Escolhe o teu serviço e marca em segundos.</p>
       </div>
 
-      <div class="services-grid">
+      <!-- Static fallback; replaced by the services configured in the backoffice when available -->
+      <div class="services-grid" id="servicesGrid">
         <div class="svc-card reveal reveal-delay-1">
           <div class="svc-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
           </div>
-          <div class="svc-title">Corte Clássico</div>
-          <p class="svc-text">Corte limpo e adaptado ao teu estilo. Do clássico ao contemporâneo, cada detalhe é tratado com precisão absoluta.</p>
-          <a href="#agendamento" class="svc-link">Reservar →</a>
+          <div class="svc-title">Corte</div>
+          <div class="svc-price"></div>
+          <p class="svc-text">Clássico ou moderno, à tesoura ou à máquina. Desenhado para o teu tipo de cabelo e para o teu dia a dia.</p>
+          <a href="#agendamento" class="svc-link">Marcar →</a>
         </div>
-
         <div class="svc-card reveal reveal-delay-2">
           <div class="svc-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7c3-2 6-2 9 0s6 2 9 0"/><path d="M3 12c3-2 6-2 9 0s6 2 9 0"/><path d="M3 17c3-2 6-2 9 0s6 2 9 0"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 7c3-2 6-2 9 0s6 2 9 0"/><path d="M3 12c3-2 6-2 9 0s6 2 9 0"/><path d="M3 17c3-2 6-2 9 0s6 2 9 0"/></svg>
           </div>
-          <div class="svc-title">Barba Completa</div>
-          <p class="svc-text">Modelação, contorno e hidratação com produtos premium. A tua barba tratada com a arte que merece.</p>
-          <a href="#agendamento" class="svc-link">Reservar →</a>
+          <div class="svc-title">Barba</div>
+          <div class="svc-price"></div>
+          <p class="svc-text">Modelação, contorno à navalha e toalha quente. Linhas limpas e uma barba com forma.</p>
+          <a href="#agendamento" class="svc-link">Marcar →</a>
         </div>
-
-        <div class="svc-card reveal reveal-delay-3">
-          <div class="svc-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          </div>
-          <div class="svc-title">Corte & Barba</div>
-          <p class="svc-text">O pacote completo. Sai renovado da cabeça aos ombros, com o visual que sempre quiseste ter.</p>
-          <a href="#agendamento" class="svc-link">Reservar →</a>
-        </div>
-
         <div class="svc-card reveal reveal-delay-1">
           <div class="svc-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="svc-title">Corte &amp; Barba</div>
+          <div class="svc-price"></div>
+          <p class="svc-text">O serviço completo. Sais renovado da cabeça ao queixo, com tudo alinhado.</p>
+          <a href="#agendamento" class="svc-link">Marcar →</a>
+        </div>
+        <div class="svc-card reveal reveal-delay-2">
+          <div class="svc-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           </div>
           <div class="svc-title">Degradê</div>
-          <p class="svc-text">Transições impecáveis e acabamentos a navalha. O degradê que define e eleva o teu look.</p>
-          <a href="#agendamento" class="svc-link">Reservar →</a>
+          <div class="svc-price"></div>
+          <p class="svc-text">Transições suaves e acabamento afiado. O fade bem feito, do skin ao low.</p>
+          <a href="#agendamento" class="svc-link">Marcar →</a>
         </div>
+      </div>
+      <p class="services-note" id="servicesNote">Preços e durações atualizados na marcação online. Dúvidas? Fala connosco no <a href="https://www.instagram.com/intemporal.barbearia/" target="_blank" rel="noopener">Instagram</a>.</p>
+    </div>
+  </section>
 
-        <div class="svc-card reveal reveal-delay-2">
-          <div class="svc-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-          </div>
-          <div class="svc-title">Coloração & Mechas</div>
-          <p class="svc-text">Do loiro platinado ao black fade — técnicas modernas, resultados impecáveis, produtos sem danos.</p>
-          <a href="#agendamento" class="svc-link">Reservar →</a>
-        </div>
-
-        <div class="svc-card reveal reveal-delay-3">
-          <div class="svc-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          </div>
-          <div class="svc-title">Ritual Premium</div>
-          <p class="svc-text">A experiência completa: corte, barba, massagem capilar e tratamentos exclusivos para os mais exigentes.</p>
-          <a href="#agendamento" class="svc-link">Reservar →</a>
-        </div>
+  <!-- ── Avaliação ─────────────────────────────────────── -->
+  <section class="rating" id="avaliacoes">
+    <div class="container">
+      <span class="section-tag reveal">O que dizem os clientes</span>
+      <div class="rating-score reveal reveal-delay-1">10<span>/10</span></div>
+      <div class="rating-stars reveal reveal-delay-1">★★★★★</div>
+      <p class="rating-quote reveal reveal-delay-2">A melhor publicidade é quem sai da cadeira e volta. A avaliação dos nossos clientes fala por nós.</p>
+      <div class="rating-src reveal reveal-delay-2">Avaliação média no Noona</div>
+      <div class="rating-links reveal reveal-delay-3">
+        <a class="btn btn-dark" href="https://share.google/2Y409U4Trqi8jOXDf" target="_blank" rel="noopener">Ver no Google</a>
+        <a class="btn btn-line" href="https://noona.pt/intemporalbarbearia" target="_blank" rel="noopener">Ver no Noona</a>
       </div>
     </div>
   </section>
@@ -1110,37 +909,37 @@
     <div class="container">
       <div class="booking-grid">
         <div class="booking-info">
-          <span class="section-tag reveal">Reservas</span>
-          <h2 class="section-title reveal reveal-delay-1">Reserve o seu<br>lugar</h2>
-          <p class="section-sub reveal reveal-delay-2">Simples, rápido e sem esperas. Escolhe o serviço, o dia e a hora que melhor se encaixam na tua agenda.</p>
+          <span class="section-tag reveal">Marcações</span>
+          <h2 class="section-title reveal reveal-delay-1">Reserva a<br>tua <em>cadeira</em></h2>
+          <p class="section-sub reveal reveal-delay-2">Simples e sem esperas. Escolhe o serviço, o dia e a hora que te dão mais jeito — o resto é connosco.</p>
 
           <div class="booking-steps" id="bookingSteps">
             <div class="booking-step reveal reveal-delay-2" id="stepService" style="display:none">
               <div class="booking-step-num">1</div>
               <div>
-                <div class="booking-step-title">Escolha o serviço</div>
-                <div class="booking-step-text">Selecione o corte ou tratamento pretendido</div>
+                <div class="booking-step-title">Escolhe o serviço</div>
+                <div class="booking-step-text">Corte, barba ou os dois</div>
               </div>
             </div>
             <div class="booking-step reveal reveal-delay-2" id="stepForm">
               <div class="booking-step-num" id="stepFormNum">1</div>
               <div>
-                <div class="booking-step-title">Preencha os dados</div>
-                <div class="booking-step-text">Indique o seu nome, email e contacto</div>
+                <div class="booking-step-title">Os teus dados</div>
+                <div class="booking-step-text">Nome, email e contacto</div>
               </div>
             </div>
             <div class="booking-step reveal reveal-delay-3" id="stepDate">
               <div class="booking-step-num" id="stepDateNum">2</div>
               <div>
-                <div class="booking-step-title">Escolha data e hora</div>
-                <div class="booking-step-text">Veja os horários disponíveis em tempo real</div>
+                <div class="booking-step-title">Dia e hora</div>
+                <div class="booking-step-text">Disponibilidade em tempo real</div>
               </div>
             </div>
             <div class="booking-step reveal reveal-delay-4">
               <div class="booking-step-num" id="stepConfirmNum">3</div>
               <div>
                 <div class="booking-step-title">Confirmação imediata</div>
-                <div class="booking-step-text">Recebe confirmação por email com convite de calendário</div>
+                <div class="booking-step-text">Recebes email com convite de calendário</div>
               </div>
             </div>
           </div>
@@ -1159,18 +958,18 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="bName">Nome completo *</label>
-                <input type="text" id="bName" placeholder="João Silva" required>
+                <input type="text" id="bName" placeholder="O teu nome" autocomplete="name" required>
               </div>
               <div class="form-group">
                 <label for="bEmail">Email *</label>
-                <input type="email" id="bEmail" placeholder="joao@exemplo.com" required>
+                <input type="email" id="bEmail" placeholder="nome@exemplo.com" autocomplete="email" required>
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group">
                 <label for="bPhone">Telemóvel</label>
-                <input type="tel" id="bPhone" placeholder="912 345 678">
+                <input type="tel" id="bPhone" placeholder="912 345 678" autocomplete="tel">
               </div>
             </div>
 
@@ -1178,9 +977,9 @@
               <label>Data da marcação *</label>
               <div class="cal-widget">
                 <div class="cal-header">
-                  <button type="button" class="cal-nav" id="calPrev">‹</button>
+                  <button type="button" class="cal-nav" id="calPrev" aria-label="Mês anterior">‹</button>
                   <span class="cal-month" id="calMonth"></span>
-                  <button type="button" class="cal-nav" id="calNext">›</button>
+                  <button type="button" class="cal-nav" id="calNext" aria-label="Mês seguinte">›</button>
                 </div>
                 <div class="cal-dow-row">
                   <div class="cal-dow">Dom</div><div class="cal-dow">Seg</div>
@@ -1202,13 +1001,13 @@
 
             <div class="form-group">
               <label for="bMessage">Observações</label>
-              <textarea id="bMessage" placeholder="Informações adicionais, preferências de corte, etc."></textarea>
+              <textarea id="bMessage" placeholder="Preferências de corte, referência que trazes, etc."></textarea>
             </div>
 
-            <div style="margin:4px 0 16px;padding:14px 16px;background:#f5f0e8;border:1.5px solid #d5c8b5;border-radius:var(--r);font-size:.83rem;color:var(--text2);line-height:1.55">
+            <div class="consent-box">
               <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
-                <input type="checkbox" id="bConsent" required style="margin-top:2px;flex-shrink:0;accent-color:var(--red);width:15px;height:15px;cursor:pointer">
-                <span>Li e aceito o tratamento dos meus dados pessoais (nome, e-mail e telefone) para gestão desta marcação, nos termos do RGPD. <button type="button" id="openPrivacy" style="background:none;border:none;padding:0;color:var(--red);text-decoration:underline;font-size:inherit;cursor:pointer;font-family:inherit">Política de Privacidade</button>.</span>
+                <input type="checkbox" id="bConsent" required style="margin-top:2px;flex-shrink:0;accent-color:var(--ink);width:15px;height:15px;cursor:pointer">
+                <span>Li e aceito o tratamento dos meus dados pessoais (nome, e-mail e telefone) para gestão desta marcação, nos termos do RGPD. <button type="button" id="openPrivacy" style="background:none;border:none;padding:0;color:var(--brass-d);text-decoration:underline;font-size:inherit;cursor:pointer;font-family:inherit">Política de Privacidade</button>.</span>
               </label>
             </div>
 
@@ -1228,7 +1027,7 @@
       <div class="contact-grid">
         <div>
           <span class="section-tag reveal">Contactos</span>
-          <h2 class="section-title reveal reveal-delay-1">Venha<br>visitar-nos</h2>
+          <h2 class="section-title reveal reveal-delay-1">Passa pela<br><em>casa</em></h2>
 
           <div class="contact-items">
             <div class="contact-item reveal reveal-delay-2">
@@ -1237,7 +1036,7 @@
               </div>
               <div>
                 <div class="contact-item-label">Morada</div>
-                <div class="contact-item-val" id="contactAddress">A carregar…</div>
+                <div class="contact-item-val" id="contactAddress">Rua de Palme 277</div>
               </div>
             </div>
 
@@ -1260,6 +1059,16 @@
                 <div class="contact-item-val" id="contactEmail"></div>
               </div>
             </div>
+
+            <div class="contact-item reveal reveal-delay-4">
+              <div class="contact-item-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+              </div>
+              <div>
+                <div class="contact-item-label">Instagram</div>
+                <div class="contact-item-val"><a href="https://www.instagram.com/intemporal.barbearia/" target="_blank" rel="noopener">@intemporal.barbearia</a></div>
+              </div>
+            </div>
           </div>
 
           <div class="social-links reveal reveal-delay-4" id="socialLinks" style="display:none"></div>
@@ -1271,10 +1080,11 @@
 
         <div class="reveal reveal-delay-2">
           <div class="contact-map" id="contactMap">
-            <div style="text-align:center;padding:24px">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#C8B8A2" stroke-width="1.5" style="margin:0 auto 12px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <p style="color:#C8B8A2;font-size:.85rem">A carregar mapa…</p>
-            </div>
+            <iframe
+              src="https://maps.google.com/maps?q=Intemporal%20Barbearia%2C%20Rua%20de%20Palme%20277&output=embed&z=15"
+              width="100%" height="100%" style="border:0;display:block"
+              allowfullscreen loading="lazy" title="Mapa — Intemporal Barbearia"
+              referrerpolicy="no-referrer-when-downgrade"></iframe>
           </div>
         </div>
       </div>
@@ -1284,11 +1094,22 @@
   <!-- ── Footer ────────────────────────────────────────── -->
   <footer>
     <div class="container">
+      <div class="footer-top">
+        <a href="#inicio" class="nav-logo" aria-label="Intemporal Barbearia">
+          <span class="nav-logo-mark">I</span>
+          <span class="nav-logo-text">
+            <span class="nav-logo-name">Intemporal</span>
+            <span class="nav-logo-sub">Barbearia</span>
+          </span>
+        </a>
+        <p class="footer-motto">O tempo passa. O estilo <em>fica.</em></p>
+      </div>
       <div class="footer-inner">
-        <div class="footer-logo">The <span>Barber</span></div>
-        <p class="footer-copy">© <span id="footerYear"></span> The Barber. Todos os direitos reservados.</p>
+        <p class="footer-copy">© <span id="footerYear"></span> Intemporal Barbearia · Rua de Palme 277</p>
         <div class="footer-links">
-          <a href="https://www.slotbook.cc" target="_blank" rel="noopener" style="color:rgba(255,255,255,.7);font-weight:500">Powered by SlotBook</a>
+          <a href="https://www.instagram.com/intemporal.barbearia/" target="_blank" rel="noopener">Instagram</a>
+          <a href="https://noona.pt/intemporalbarbearia" target="_blank" rel="noopener">Noona</a>
+          <a href="https://www.slotbook.cc" target="_blank" rel="noopener">Powered by SlotBook</a>
           <a href="/admin">Backoffice</a>
         </div>
       </div>
@@ -1303,24 +1124,18 @@
         if (!res.ok) return;
         const pub = await res.json();
 
-        // Address + map
+        // Address + map (the page ships with Rua de Palme 277 as default; backoffice value wins)
         const address = pub.address || '';
         const addrEl = document.getElementById('contactAddress');
         const mapEl  = document.getElementById('contactMap');
         if (address) {
           addrEl.textContent = address;
-          const q = encodeURIComponent(address);
+          const q = encodeURIComponent(`Intemporal Barbearia, ${address}`);
           mapEl.innerHTML = `<iframe
             src="https://maps.google.com/maps?q=${q}&output=embed&z=15"
             width="100%" height="100%" style="border:0;display:block"
-            allowfullscreen loading="lazy"
+            allowfullscreen loading="lazy" title="Mapa — Intemporal Barbearia"
             referrerpolicy="no-referrer-when-downgrade"></iframe>`;
-        } else {
-          addrEl.textContent = 'Morada não configurada';
-          mapEl.innerHTML = `<div style="text-align:center;padding:24px">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#C8B8A2" stroke-width="1.5" style="margin:0 auto 12px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <p style="color:#C8B8A2;font-size:.85rem">Configure a morada no backoffice</p>
-          </div>`;
         }
 
         // Business phone & email
@@ -1636,6 +1451,7 @@
 
         if (pub?.services?.length) {
           renderServiceOptions(pub.services);
+          renderServiceMenu(pub.services);
         }
         servicesLoaded = true;
       } catch {}
@@ -1667,6 +1483,34 @@
       document.getElementById('stepFormNum').textContent    = '2';
       document.getElementById('stepDateNum').textContent    = '3';
       document.getElementById('stepConfirmNum').textContent = '4';
+    }
+
+    // Replace the static "carta da casa" with the services configured in the backoffice
+    function renderServiceMenu(services) {
+      const grid = document.getElementById('servicesGrid');
+      if (!grid) return;
+      const icon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>';
+      grid.innerHTML = '';
+      services.forEach(svc => {
+        const card = document.createElement('div');
+        card.className = 'svc-card';
+        card.innerHTML = `
+          <div class="svc-icon">${icon}</div>
+          <div class="svc-title">${esc2(svc.name)}</div>
+          <div class="svc-price">${svc.price ? esc2(svc.price) : ''}</div>
+          <div class="svc-meta">${Number(svc.duration) || ''} min</div>
+          ${svc.description ? `<p class="svc-text">${esc2(svc.description)}</p>` : ''}
+          <button type="button" class="svc-link">Marcar →</button>
+        `;
+        card.querySelector('.svc-link').addEventListener('click', () => {
+          const opt = document.querySelector(`.svc-option[data-id="${CSS.escape(String(svc.id))}"]`);
+          if (opt) selectService(opt, svc);
+          document.getElementById('agendamento').scrollIntoView({ behavior: 'smooth' });
+        });
+        grid.appendChild(card);
+      });
+      const note = document.getElementById('servicesNote');
+      if (note) note.style.display = 'none';
     }
 
     function selectService(btn, svc) {
@@ -1934,7 +1778,7 @@
       <p id="privacyContact" style="margin:0 0 8px;font-size:.88rem;color:#444;line-height:1.6"></p>
       <p style="margin:0 0 16px;font-size:.88rem;color:#444;line-height:1.6">Tem ainda o direito de apresentar reclamação à autoridade de controlo nacional: <strong>CNPD</strong> — Comissão Nacional de Proteção de Dados (<a href="https://www.cnpd.pt" target="_blank" rel="noopener" style="color:var(--red)">www.cnpd.pt</a>).</p>
 
-      <button type="button" id="closePrivacy2" style="display:block;width:100%;padding:12px;background:var(--red,#8B1A1A);color:#fff;border:none;border-radius:8px;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:4px">Fechar</button>
+      <button type="button" id="closePrivacy2" style="display:block;width:100%;padding:12px;background:var(--ink,#0E0D0B);color:#fff;border:none;border-radius:2px;letter-spacing:.08em;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:4px">Fechar</button>
     </div>
   </div>
 
@@ -1947,7 +1791,7 @@
       const ctrlEl  = document.getElementById('privacyController');
 
       function openModal() {
-        const name    = gdprBusinessName  || 'Este estabelecimento';
+        const name    = gdprBusinessName  || 'Intemporal Barbearia';
         const email   = gdprBusinessEmail || '';
         const phone   = gdprBusinessPhone || '';
         const address = gdprAddress       || '';
