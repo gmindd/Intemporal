@@ -54,7 +54,6 @@ module.exports = async function handler(req, res) {
     const out = { id: svc.id, name: svc.name, duration: svc.duration };
     if (svc.description) out.description = svc.description;
     if (svc.price)       out.price       = svc.price;
-    if (svc.photo)       out.photo       = svc.photo;
     return out;
   });
 

@@ -387,29 +387,24 @@
     .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 72px; position: relative; z-index: 1; }
 
     .svc-card {
-      display: grid; grid-template-columns: 52px 1fr auto; gap: 4px 20px; align-items: start;
+      display: grid; grid-template-columns: 1fr auto; gap: 4px 24px; align-items: start; align-content: start;
       padding: 28px 0; border-bottom: 1px solid var(--line-d);
       transition: background .3s;
     }
-    .svc-card:hover .svc-icon { background: var(--accent); color: var(--ink); border-color: var(--accent); }
-    .svc-icon {
-      grid-row: span 3;
-      width: 52px; height: 52px; border-radius: 50%;
-      border: 1px solid rgba(224,69,74,.45); color: var(--accent);
-      display: flex; align-items: center; justify-content: center; transition: all .3s;
-    }
     .svc-title { font-family: var(--serif); font-size: 1.55rem; font-weight: 600; color: var(--white); line-height: 1.15; }
-    .svc-price { font-family: var(--serif); font-size: 1.45rem; font-weight: 600; color: var(--accent); white-space: nowrap; line-height: 1.15; }
-    .svc-meta { grid-column: 2 / -1; font-size: .66rem; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.4); }
-    .svc-text { grid-column: 2 / -1; font-size: .9rem; color: rgba(255,255,255,.6); line-height: 1.7; margin-top: 6px; }
+    .svc-price { font-family: var(--serif); font-size: 1.45rem; font-weight: 600; color: var(--accent); white-space: nowrap; line-height: 1.15; padding-top: .1em; }
+    .svc-meta { grid-column: 1 / -1; font-size: .66rem; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.4); }
+    .svc-text { grid-column: 1 / -1; font-size: .9rem; color: rgba(255,255,255,.6); line-height: 1.7; margin-top: 6px; }
     .svc-link {
-      grid-column: 2 / -1; justify-self: start;
+      grid-column: 1 / -1; justify-self: start;
       display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
       font-size: .68rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--accent);
       background: none; border: none; cursor: pointer; font-family: var(--sans); padding: 0; transition: gap .2s;
     }
     .svc-link:hover { gap: 12px; color: var(--accent-l); }
 
+    .services-empty { font-size: 1rem; color: rgba(255,255,255,.6); position: relative; z-index: 1; }
+    .services-empty a { color: var(--accent); border-bottom: 1px solid rgba(224,69,74,.4); }
     .services-note { margin-top: 40px; font-size: .82rem; color: rgba(255,255,255,.45); position: relative; z-index: 1; }
     .services-note a { color: var(--accent); border-bottom: 1px solid rgba(224,69,74,.4); }
 
@@ -419,9 +414,6 @@
       .services-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 480px) {
-      .svc-card { grid-template-columns: 1fr auto; }
-      .svc-icon { display: none; }
-      .svc-meta, .svc-text, .svc-link { grid-column: 1 / -1; }
       .svc-title { font-size: 1.35rem; }
     }
 
@@ -885,46 +877,10 @@
         <p class="section-sub reveal reveal-delay-2">Do corte clássico ao degradê mais limpo, da barba aparada ao ritual completo com navalha e toalha quente. Escolhe o teu serviço e marca em segundos.</p>
       </div>
 
-      <!-- Static fallback; replaced by the services configured in the backoffice when available -->
-      <div class="services-grid" id="servicesGrid">
-        <div class="svc-card reveal reveal-delay-1">
-          <div class="svc-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
-          </div>
-          <div class="svc-title">Corte</div>
-          <div class="svc-price"></div>
-          <p class="svc-text">Clássico ou moderno, à tesoura ou à máquina. Desenhado para o teu tipo de cabelo e para o teu dia a dia.</p>
-          <a href="#agendamento" class="svc-link">Marcar →</a>
-        </div>
-        <div class="svc-card reveal reveal-delay-2">
-          <div class="svc-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 7c3-2 6-2 9 0s6 2 9 0"/><path d="M3 12c3-2 6-2 9 0s6 2 9 0"/><path d="M3 17c3-2 6-2 9 0s6 2 9 0"/></svg>
-          </div>
-          <div class="svc-title">Barba</div>
-          <div class="svc-price"></div>
-          <p class="svc-text">Modelação, contorno à navalha e toalha quente. Linhas limpas e uma barba com forma.</p>
-          <a href="#agendamento" class="svc-link">Marcar →</a>
-        </div>
-        <div class="svc-card reveal reveal-delay-1">
-          <div class="svc-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          </div>
-          <div class="svc-title">Corte &amp; Barba</div>
-          <div class="svc-price"></div>
-          <p class="svc-text">O serviço completo. Sais renovado da cabeça ao queixo, com tudo alinhado.</p>
-          <a href="#agendamento" class="svc-link">Marcar →</a>
-        </div>
-        <div class="svc-card reveal reveal-delay-2">
-          <div class="svc-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          </div>
-          <div class="svc-title">Degradê</div>
-          <div class="svc-price"></div>
-          <p class="svc-text">Transições suaves e acabamento afiado. O fade bem feito, do skin ao low.</p>
-          <a href="#agendamento" class="svc-link">Marcar →</a>
-        </div>
-      </div>
-      <p class="services-note" id="servicesNote">Preços (com IVA incluído) e durações atualizados na marcação online. Dúvidas? Fala connosco no <a href="https://www.instagram.com/intemporal.barbearia/" target="_blank" rel="noopener">Instagram</a>.</p>
+      <!-- Filled with the services configured in the backoffice -->
+      <div class="services-grid" id="servicesGrid"></div>
+      <p class="services-empty" id="servicesEmpty">Consulta os nossos serviços e preços na marcação online ou fala connosco no <a href="https://www.instagram.com/intemporal.barbearia/" target="_blank" rel="noopener">Instagram</a>.</p>
+      <p class="services-note" id="servicesNote" hidden>Preços com IVA incluído à taxa legal em vigor.</p>
     </div>
   </section>
 
@@ -1575,6 +1531,10 @@
         if (pub?.businessPhone) gdprBusinessPhone = pub.businessPhone;
         if (pub?.address)       gdprAddress       = pub.address;
 
+        // Services section on the page mirrors the backoffice list
+        const bookingOn = pub?.bookingEnabled !== false;
+        if (pub?.services?.length) renderServiceMenu(pub.services, bookingOn);
+
         // Booking system toggle
         if (pub?.bookingEnabled === false) {
           // Hide booking section and all CTAs
@@ -1590,7 +1550,6 @@
 
         if (pub?.services?.length) {
           renderServiceOptions(pub.services);
-          renderServiceMenu(pub.services);
         }
         servicesLoaded = true;
       } catch {}
@@ -1625,31 +1584,29 @@
     }
 
     // Replace the static "carta da casa" with the services configured in the backoffice
-    function renderServiceMenu(services) {
+    function renderServiceMenu(services, bookingOn = true) {
       const grid = document.getElementById('servicesGrid');
       if (!grid) return;
-      const icon = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>';
       grid.innerHTML = '';
       services.forEach(svc => {
         const card = document.createElement('div');
         card.className = 'svc-card';
         card.innerHTML = `
-          <div class="svc-icon">${icon}</div>
           <div class="svc-title">${esc2(svc.name)}</div>
           <div class="svc-price">${svc.price ? esc2(svc.price) : ''}</div>
           <div class="svc-meta">${Number(svc.duration) || ''} min</div>
           ${svc.description ? `<p class="svc-text">${esc2(svc.description)}</p>` : ''}
-          <button type="button" class="svc-link">Marcar →</button>
+          ${bookingOn ? '<button type="button" class="svc-link">Marcar →</button>' : ''}
         `;
-        card.querySelector('.svc-link').addEventListener('click', () => {
+        card.querySelector('.svc-link')?.addEventListener('click', () => {
           const opt = document.querySelector(`.svc-option[data-id="${CSS.escape(String(svc.id))}"]`);
           if (opt) selectService(opt, svc);
           document.getElementById('agendamento').scrollIntoView({ behavior: 'smooth' });
         });
         grid.appendChild(card);
       });
-      const note = document.getElementById('servicesNote');
-      if (note) note.innerHTML = 'Preços com IVA incluído à taxa legal em vigor.';
+      document.getElementById('servicesEmpty').hidden = true;
+      document.getElementById('servicesNote').hidden = !services.some(svc => svc.price);
     }
 
     function selectService(btn, svc) {

@@ -22,8 +22,8 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ error: `Serviço ${i + 1}: o campo "duração" é obrigatório e deve ser um número positivo.` });
     }
 
-    const OPTIONAL = ['description', 'price', 'photo'];
-    const LABELS   = { description: 'descrição', price: 'preço', photo: 'foto (URL)' };
+    const OPTIONAL = ['description', 'price'];
+    const LABELS   = { description: 'descrição', price: 'preço' };
     for (const field of OPTIONAL) {
       const filled = services.filter(s => s[field]?.trim());
       if (filled.length > 0 && filled.length < services.length) {
@@ -39,7 +39,6 @@ module.exports = async function handler(req, res) {
       duration:    parseInt(s.duration, 10),
       description: s.description?.trim() || '',
       price:       s.price?.trim() || '',
-      photo:       s.photo?.trim() || '',
     }));
 
     await kv.set('services', clean);

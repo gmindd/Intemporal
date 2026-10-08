@@ -529,9 +529,8 @@ function addServiceRow(data = {}) {
   row.innerHTML = `
     <input type="text"   class="svc-name"        placeholder="Nome *"          value="${esc(data.name        || '')}">
     <input type="number" class="svc-duration"     placeholder="Min *" min="1"   value="${esc(String(data.duration || ''))}">
-    <input type="text"   class="svc-description"  placeholder="Descrição"       value="${esc(data.description || '')}">
+    <input type="text"   class="svc-description"  placeholder="Descrição (aparece no site)" maxlength="240" value="${esc(data.description || '')}">
     <input type="text"   class="svc-price"        placeholder="ex: 50€"         value="${esc(data.price       || '')}">
-    <input type="url"    class="svc-photo"        placeholder="https://…"       value="${esc(data.photo       || '')}">
     <button type="button" class="svc-remove" title="Remover linha">✕</button>
   `;
   row.querySelector('.svc-remove').addEventListener('click', () => {
@@ -564,7 +563,6 @@ async function saveServices() {
     duration:    row.querySelector('.svc-duration').value,
     description: row.querySelector('.svc-description').value.trim(),
     price:       row.querySelector('.svc-price').value.trim(),
-    photo:       row.querySelector('.svc-photo').value.trim(),
   }));
 
   try {

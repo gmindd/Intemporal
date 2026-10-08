@@ -651,7 +651,7 @@ body {
 /* ── Services editor ────────────────────────────────────── */
 .svc-grid-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 2.5fr 1.2fr 2fr 36px;
+  grid-template-columns: 2fr 1fr 3.5fr 1.2fr 36px;
   gap: 8px;
   padding: 6px 10px 8px;
   font-size: .75rem;
@@ -665,7 +665,7 @@ body {
 
 .svc-edit-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 2.5fr 1.2fr 2fr 36px;
+  grid-template-columns: 2fr 1fr 3.5fr 1.2fr 36px;
   gap: 8px;
   align-items: center;
   padding: 8px 0;
@@ -719,7 +719,6 @@ body {
   .svc-edit-row .svc-duration    { grid-column: 2 / 3; }
   .svc-edit-row .svc-description { grid-column: 1 / -1; }
   .svc-edit-row .svc-price       { grid-column: 1 / 2; }
-  .svc-edit-row .svc-photo       { grid-column: 1 / 2; }
   .svc-edit-row .svc-remove      { grid-column: 2 / 3; grid-row: 3; justify-self: end; }
 }
 

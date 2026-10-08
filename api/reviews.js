@@ -42,7 +42,6 @@ module.exports = async function handler(req, res) {
           when:   rv.relativePublishTimeDescription || '',
           author: rv.authorAttribution?.displayName || 'Cliente Google',
           authorUrl: rv.authorAttribution?.uri || null,
-          photo:  rv.authorAttribution?.photoUri || null,
         })),
     };
 
