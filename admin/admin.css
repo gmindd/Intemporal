@@ -5,9 +5,9 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --gold:     #B8913F;
-  --gold-l:   #D4A85A;
-  --gold-dim: rgba(184,145,63,.15);
+  --gold:     #B30000;
+  --gold-l:   #8E0000;
+  --gold-dim: rgba(179,0,0,.10);
   --dark:     #0D0C0A;
   --dark2:    #181612;
   --cream:    #FAF7F2;
@@ -426,7 +426,7 @@ body {
 
 .cal-info-box {
   background: var(--gold-dim);
-  border: 1px solid rgba(184,145,63,.3);
+  border: 1px solid rgba(179,0,0,.3);
   border-radius: 8px;
   padding: 14px 18px;
   font-size: .84rem;

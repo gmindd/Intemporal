@@ -12,9 +12,7 @@
   <link rel="icon" type="image/png" href="/assets/favicon.png">
   <link rel="apple-touch-icon" href="/assets/logo-redondo.png">
   <meta property="og:image" content="/assets/logo-redondo.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/fonts/fonts.css">
   <style>
     /* ── Reset & base ───────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,10 +21,10 @@
       --ink:     #0E0D0B;
       --ink2:    #171512;
       --ink3:    #221F1B;
-      --brass:   #C29A5B;
-      --brass-l: #D6B47C;
-      --brass-d: #9C7840;
-      --ox:      #7A2E2A;   /* barber oxblood, used sparingly */
+      --accent:   #E0454A;  /* logo red, lightened for text/lines on dark backgrounds */
+      --accent-l: #EE6A6E;
+      --accent-d: #B30000;  /* logo red — fills and text on light backgrounds */
+      --accent-dd:#8E0000;
       --paper:   #FAF7F1;
       --bone:    #F1EBDF;
       --bone2:   #E7DECE;
@@ -36,7 +34,7 @@
       --text3:   #8C8274;
       --border:  #DCD2C1;
       --line-d:  rgba(255,255,255,.09);
-      --red:     var(--brass-d); /* legacy alias used by inline styles / modal */
+      --red:     var(--accent-d); /* legacy alias used by inline styles / modal */
       --r:       4px;
       --r-lg:    8px;
       --shadow:  0 4px 24px rgba(14,13,11,.10);
@@ -61,7 +59,7 @@
 
     img { display: block; max-width: 100%; }
     a { color: inherit; text-decoration: none; }
-    ::selection { background: var(--brass); color: var(--ink); }
+    ::selection { background: var(--accent-d); color: var(--white); }
 
     /* ── Utility ────────────────────────────────────── */
     .container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
@@ -75,7 +73,7 @@
       font-weight: 600;
       letter-spacing: .28em;
       text-transform: uppercase;
-      color: var(--brass-d);
+      color: var(--accent-d);
       margin-bottom: 18px;
     }
     .section-tag::before { content: ''; width: 28px; height: 1px; background: currentColor; }
@@ -85,7 +83,7 @@
       color: var(--ink);
       margin-bottom: 18px;
     }
-    .section-title em { font-style: italic; color: var(--brass-d); }
+    .section-title em { font-style: italic; color: var(--accent-d); }
 
     .section-sub {
       font-size: 1.02rem;
@@ -110,10 +108,10 @@
       border: 1px solid transparent;
       transition: all .25s;
     }
-    .btn-primary { background: var(--brass); color: var(--ink); }
-    .btn-primary:hover { background: var(--brass-l); transform: translateY(-2px); box-shadow: 0 10px 28px rgba(194,154,91,.28); }
+    .btn-primary { background: var(--accent-d); color: var(--white); }
+    .btn-primary:hover { background: var(--accent-dd); transform: translateY(-2px); box-shadow: 0 10px 28px rgba(179,0,0,.35); }
     .btn-outline { background: transparent; color: var(--white); border-color: rgba(255,255,255,.35); }
-    .btn-outline:hover { border-color: var(--brass); color: var(--brass-l); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent-l); }
 
     /* ── Scroll reveal ──────────────────────────────── */
     .reveal { opacity: 0; transform: translateY(28px); transition: opacity .7s ease, transform .7s ease; }
@@ -139,23 +137,17 @@
     .nav-inner { display: flex; align-items: center; justify-content: space-between; }
 
     .nav-logo { display: flex; align-items: center; gap: 12px; color: var(--white); }
-    .nav-logo-mark {
-      width: 38px; height: 38px;
-      border: 1px solid var(--brass);
-      border-radius: 50%;
-      display: grid; place-items: center;
-      font-family: var(--serif); font-size: 1.35rem; font-weight: 600; color: var(--brass);
-    }
-    .nav-logo-text { display: flex; flex-direction: column; line-height: 1; }
-    .nav-logo-name { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
-    .nav-logo-sub { font-size: .58rem; letter-spacing: .42em; text-transform: uppercase; color: var(--brass); margin-top: 4px; }
+    .nav-logo img { height: 40px; width: auto; display: block; }
+    .nav.scrolled .nav-logo img { height: 34px; }
+    footer .nav-logo img { height: 52px; }
+    @media (max-width: 560px) { .nav-logo img { height: 32px; } }
 
     .nav-links { display: flex; align-items: center; gap: 34px; list-style: none; }
     .nav-links a:not(.btn) {
       font-size: .74rem; font-weight: 600; letter-spacing: .2em; text-transform: uppercase;
       color: rgba(255,255,255,.75); transition: color .2s;
     }
-    .nav-links a:not(.btn):hover { color: var(--brass-l); }
+    .nav-links a:not(.btn):hover { color: var(--accent-l); }
     .nav-cta { padding: 11px 20px !important; }
 
     .nav-burger { display: none; flex-direction: column; gap: 6px; cursor: pointer; background: none; border: none; padding: 6px; }
@@ -182,7 +174,7 @@
       content: '';
       position: absolute; inset: 0;
       background:
-        radial-gradient(ellipse 60% 70% at 78% 45%, rgba(194,154,91,.13) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 70% at 78% 45%, rgba(224,69,74,.13) 0%, transparent 70%),
         radial-gradient(ellipse 50% 50% at 10% 100%, rgba(122,46,42,.18) 0%, transparent 70%);
       pointer-events: none;
     }
@@ -206,12 +198,12 @@
     .hero-tag {
       display: inline-flex; align-items: center; gap: 14px;
       font-size: .7rem; font-weight: 600; letter-spacing: .32em; text-transform: uppercase;
-      color: var(--brass); margin-bottom: 28px;
+      color: var(--accent); margin-bottom: 28px;
     }
-    .hero-tag::before { content: ''; width: 40px; height: 1px; background: var(--brass); }
+    .hero-tag::before { content: ''; width: 40px; height: 1px; background: var(--accent); }
 
     .hero-title { font-size: clamp(3rem, 7.4vw, 6rem); line-height: .98; margin-bottom: 28px; font-weight: 500; }
-    .hero-title em { font-style: italic; color: var(--brass); }
+    .hero-title em { font-style: italic; color: var(--accent); }
 
     .hero-sub { font-size: 1.05rem; color: rgba(255,255,255,.66); line-height: 1.8; margin-bottom: 40px; max-width: 470px; }
 
@@ -224,7 +216,7 @@
     .hero-stats > div { flex: 1; padding-right: 20px; }
     .hero-stats > div + div { padding-left: 20px; border-left: 1px solid var(--line-d); }
     .hero-stat-num { font-family: var(--serif); font-size: 2.3rem; font-weight: 600; line-height: 1; }
-    .hero-stat-num span { color: var(--brass); }
+    .hero-stat-num span { color: var(--accent); }
     .hero-stat-label { font-size: .68rem; color: rgba(255,255,255,.5); margin-top: 8px; letter-spacing: .16em; text-transform: uppercase; }
 
     .hero-visual { display: flex; justify-content: center; align-items: center; position: relative; }
@@ -242,10 +234,10 @@
     .seal-core {
       position: absolute; inset: 15%;
       border-radius: 50%;
-      border: 1px solid rgba(194,154,91,.55);
+      border: 1px solid rgba(224,69,74,.55);
       background: #000;
       overflow: hidden;
-      box-shadow: 0 0 0 10px #0E0D0B, 0 0 0 11px rgba(194,154,91,.25), 0 30px 80px rgba(0,0,0,.55);
+      box-shadow: 0 0 0 10px #0E0D0B, 0 0 0 11px rgba(224,69,74,.25), 0 30px 80px rgba(0,0,0,.55);
     }
     .seal-core img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
@@ -262,7 +254,7 @@
     }
     .hero-badge-icon {
       width: 38px; height: 38px; border-radius: 50%;
-      background: var(--ink); color: var(--brass);
+      background: var(--ink); color: var(--accent);
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .hero-badge-label { font-size: .62rem; color: var(--text3); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
@@ -271,17 +263,17 @@
     .hero-badge2 {
       position: absolute; top: 6%; right: -2%;
       background: var(--ink2);
-      border: 1px solid rgba(194,154,91,.35);
+      border: 1px solid rgba(224,69,74,.35);
       border-radius: var(--r);
       padding: 12px 16px;
       box-shadow: var(--shadow-lg);
       text-align: center;
     }
     .hero-badge2 { display: flex; align-items: center; gap: 10px; transition: border-color .2s; }
-    .hero-badge2:hover { border-color: var(--brass); }
+    .hero-badge2:hover { border-color: var(--accent); }
     .hero-badge2-score { font-family: var(--serif); font-size: 1.6rem; font-weight: 600; color: var(--white); line-height: 1; }
     .hero-badge2-score[hidden] { display: none; }
-    .hero-badge2-stars { color: var(--brass); font-size: .8rem; letter-spacing: .12em; line-height: 1; }
+    .hero-badge2-stars { color: var(--accent); font-size: .8rem; letter-spacing: .12em; line-height: 1; }
     .hero-badge2-text { font-size: .6rem; color: rgba(255,255,255,.65); font-weight: 600; letter-spacing: .16em; text-transform: uppercase; margin-top: 4px; text-align: left; }
 
     @media (max-width: 900px) {
@@ -302,7 +294,7 @@
     }
 
     /* ── Marquee ────────────────────────────────────── */
-    .marquee { background: var(--brass); color: var(--ink); overflow: hidden; padding: 16px 0; border-block: 1px solid var(--brass-d); }
+    .marquee { background: var(--accent-d); color: var(--white); overflow: hidden; padding: 16px 0; border-block: 1px solid var(--accent-dd); }
     .marquee-track { display: flex; width: max-content; animation: marquee 38s linear infinite; }
     .marquee-item {
       display: flex; align-items: center; gap: 28px; padding-right: 28px;
@@ -334,25 +326,25 @@
     }
     .about-img::before {
       content: ''; position: absolute; inset: 14px;
-      border: 1px solid rgba(194,154,91,.35); border-radius: 4px; pointer-events: none;
+      border: 1px solid rgba(224,69,74,.35); border-radius: 4px; pointer-events: none;
     }
     .def-word { font-family: var(--serif); font-size: clamp(2.6rem, 5vw, 3.4rem); font-weight: 600; line-height: 1; }
-    .def-phon { font-family: var(--serif); font-style: italic; color: var(--brass); font-size: 1.15rem; margin-top: 10px; }
+    .def-phon { font-family: var(--serif); font-style: italic; color: var(--accent); font-size: 1.15rem; margin-top: 10px; }
     .def-class { font-size: .68rem; letter-spacing: .25em; text-transform: uppercase; color: rgba(255,255,255,.45); margin-top: 24px; }
     .def-body { font-family: var(--serif); font-size: 1.45rem; line-height: 1.4; color: rgba(255,255,255,.92); margin-top: 10px; max-width: 300px; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
-    .def-body em { color: var(--brass-l); }
+    .def-body em { color: var(--accent-l); }
     .def-foot { display: flex; align-items: center; justify-content: space-between; font-size: .66rem; letter-spacing: .25em; text-transform: uppercase; color: rgba(255,255,255,.45); }
-    .def-foot svg { color: var(--brass); }
+    .def-foot svg { color: var(--accent); }
 
     .about-accent {
       position: absolute; bottom: -22px; right: -22px; width: 60%; height: 60%;
-      border: 1px solid var(--brass); border-radius: var(--r-lg); z-index: -1; opacity: .6;
+      border: 1px solid var(--accent); border-radius: var(--r-lg); z-index: -1; opacity: .6;
     }
     .about-img-wrap { z-index: 0; }
 
     .about-pill {
       position: absolute; top: 40px; right: -26px;
-      background: var(--brass); color: var(--ink);
+      background: var(--accent-d); color: var(--white);
       padding: 10px 18px; font-size: .68rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
       box-shadow: var(--shadow); white-space: nowrap; border-radius: 2px;
     }
@@ -361,9 +353,9 @@
     .about-feat { display: flex; align-items: flex-start; gap: 14px; }
     .about-feat-icon {
       width: 40px; height: 40px; border-radius: 50%;
-      border: 1px solid var(--brass);
+      border: 1px solid var(--accent);
       display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; color: var(--brass-d);
+      flex-shrink: 0; color: var(--accent-d);
     }
     .about-feat-title { font-family: var(--serif); font-size: 1.2rem; font-weight: 600; color: var(--ink); line-height: 1.2; }
     .about-feat-text { font-size: .84rem; color: var(--text3); margin-top: 4px; }
@@ -381,15 +373,15 @@
     .services { padding: 120px 0; background: var(--ink); color: var(--white); position: relative; overflow: hidden; }
     .services::after {
       content: ''; position: absolute; bottom: -120px; right: -120px; width: 480px; height: 480px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(194,154,91,.09) 0%, transparent 70%); pointer-events: none;
+      background: radial-gradient(circle, rgba(224,69,74,.09) 0%, transparent 70%); pointer-events: none;
       transform: translate(calc(var(--px, 0) * 22px), calc(var(--py, 0) * 14px));
       transition: transform 1s cubic-bezier(0.23, 1, 0.32, 1);
     }
 
     .services-head { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; margin-bottom: 64px; position: relative; z-index: 1; }
-    .services-head .section-tag { color: var(--brass); }
+    .services-head .section-tag { color: var(--accent); }
     .services-head .section-title { color: var(--white); margin-bottom: 0; }
-    .services-head .section-title em { color: var(--brass); }
+    .services-head .section-title em { color: var(--accent); }
     .services-head .section-sub { color: rgba(255,255,255,.6); }
 
     .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 72px; position: relative; z-index: 1; }
@@ -399,27 +391,27 @@
       padding: 28px 0; border-bottom: 1px solid var(--line-d);
       transition: background .3s;
     }
-    .svc-card:hover .svc-icon { background: var(--brass); color: var(--ink); border-color: var(--brass); }
+    .svc-card:hover .svc-icon { background: var(--accent); color: var(--ink); border-color: var(--accent); }
     .svc-icon {
       grid-row: span 3;
       width: 52px; height: 52px; border-radius: 50%;
-      border: 1px solid rgba(194,154,91,.45); color: var(--brass);
+      border: 1px solid rgba(224,69,74,.45); color: var(--accent);
       display: flex; align-items: center; justify-content: center; transition: all .3s;
     }
     .svc-title { font-family: var(--serif); font-size: 1.55rem; font-weight: 600; color: var(--white); line-height: 1.15; }
-    .svc-price { font-family: var(--serif); font-size: 1.45rem; font-weight: 600; color: var(--brass); white-space: nowrap; line-height: 1.15; }
+    .svc-price { font-family: var(--serif); font-size: 1.45rem; font-weight: 600; color: var(--accent); white-space: nowrap; line-height: 1.15; }
     .svc-meta { grid-column: 2 / -1; font-size: .66rem; letter-spacing: .22em; text-transform: uppercase; color: rgba(255,255,255,.4); }
     .svc-text { grid-column: 2 / -1; font-size: .9rem; color: rgba(255,255,255,.6); line-height: 1.7; margin-top: 6px; }
     .svc-link {
       grid-column: 2 / -1; justify-self: start;
       display: inline-flex; align-items: center; gap: 6px; margin-top: 12px;
-      font-size: .68rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--brass);
+      font-size: .68rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--accent);
       background: none; border: none; cursor: pointer; font-family: var(--sans); padding: 0; transition: gap .2s;
     }
-    .svc-link:hover { gap: 12px; color: var(--brass-l); }
+    .svc-link:hover { gap: 12px; color: var(--accent-l); }
 
     .services-note { margin-top: 40px; font-size: .82rem; color: rgba(255,255,255,.45); position: relative; z-index: 1; }
-    .services-note a { color: var(--brass); border-bottom: 1px solid rgba(194,154,91,.4); }
+    .services-note a { color: var(--accent); border-bottom: 1px solid rgba(224,69,74,.4); }
 
     @media (max-width: 900px) {
       .services { padding: 88px 0; }
@@ -439,7 +431,7 @@
     .reviews-summary { display: flex; align-items: center; gap: 18px; }
     .reviews-summary[hidden] { display: none; }
     .reviews-score { font-family: var(--serif); font-size: clamp(3.6rem, 8vw, 5rem); font-weight: 600; line-height: 1; color: var(--ink); }
-    .reviews-stars { color: var(--brass-d); font-size: 1.05rem; letter-spacing: .14em; }
+    .reviews-stars { color: var(--accent-d); font-size: 1.05rem; letter-spacing: .14em; }
     .reviews-count { font-size: .7rem; letter-spacing: .2em; text-transform: uppercase; color: var(--text3); margin-top: 6px; }
     .g-logo { display: inline-flex; align-items: center; gap: 8px; font-size: .7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--text2); }
 
@@ -448,13 +440,13 @@
       background: var(--paper); border: 1px solid var(--border); border-radius: var(--r-lg);
       padding: 28px 26px; display: flex; flex-direction: column; gap: 14px;
     }
-    .review-stars { color: var(--brass-d); letter-spacing: .12em; font-size: .95rem; }
+    .review-stars { color: var(--accent-d); letter-spacing: .12em; font-size: .95rem; }
     .review-text { font-family: var(--serif); font-size: 1.2rem; line-height: 1.45; color: var(--text); flex: 1; }
     .review-text.clamp { display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
     .review-author { display: flex; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
-    .review-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: var(--ink); color: var(--brass); display: grid; place-items: center; font-weight: 700; flex-shrink: 0; }
+    .review-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: var(--ink); color: var(--accent); display: grid; place-items: center; font-weight: 700; flex-shrink: 0; }
     .review-name { font-size: .9rem; font-weight: 700; color: var(--ink); }
-    .review-name a:hover { color: var(--brass-d); }
+    .review-name a:hover { color: var(--accent-d); }
     .review-when { font-size: .74rem; color: var(--text3); }
 
     .reviews-empty {
@@ -480,7 +472,7 @@
       display: flex; align-items: center; justify-content: center;
       color: var(--text2); transition: all .2s; flex-shrink: 0;
     }
-    .social-link:hover { border-color: var(--ink); background: var(--ink); color: var(--brass); transform: translateY(-2px); }
+    .social-link:hover { border-color: var(--ink); background: var(--ink); color: var(--accent); transform: translateY(-2px); }
 
     /* ── Booking ────────────────────────────────────── */
     .booking { padding: 120px 0; background: var(--paper); }
@@ -492,7 +484,7 @@
     .booking-step:first-child { border-top: 1px solid var(--border); }
     .booking-step-num {
       font-family: var(--serif); font-size: 1.6rem; font-weight: 600; font-style: italic;
-      color: var(--brass-d); line-height: 1; width: 32px; flex-shrink: 0;
+      color: var(--accent-d); line-height: 1; width: 32px; flex-shrink: 0;
     }
     .booking-step-title { font-size: .95rem; font-weight: 700; color: var(--ink); }
     .booking-step-text { font-size: .84rem; color: var(--text3); margin-top: 2px; }
@@ -500,7 +492,7 @@
     .booking-card {
       background: var(--white);
       border: 1px solid var(--border);
-      border-top: 3px solid var(--brass);
+      border-top: 3px solid var(--accent);
       border-radius: var(--r);
       padding: 44px;
       box-shadow: 0 20px 60px rgba(14,13,11,.06);
@@ -523,7 +515,7 @@
     }
     .form-group input:focus,
     .form-group select:focus,
-    .form-group textarea:focus { border-color: var(--brass); background: var(--white); box-shadow: 0 0 0 3px rgba(194,154,91,.18); }
+    .form-group textarea:focus { border-color: var(--accent); background: var(--white); box-shadow: 0 0 0 3px rgba(224,69,74,.18); }
     .form-group textarea { resize: vertical; min-height: 90px; }
 
     .time-slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
@@ -533,7 +525,7 @@
       transition: all .2s; background: var(--paper); font-family: var(--sans);
     }
     .time-slot:hover { border-color: var(--ink); color: var(--ink); }
-    .time-slot.selected { background: var(--ink); border-color: var(--ink); color: var(--brass); }
+    .time-slot.selected { background: var(--ink); border-color: var(--ink); color: var(--accent); }
     .time-slot.disabled { opacity: .35; pointer-events: none; text-decoration: line-through; }
     .slots-hint { font-size: .8rem; color: var(--text3); margin-top: 8px; }
 
@@ -544,7 +536,7 @@
       font-family: var(--sans); font-size: .78rem; font-weight: 700; letter-spacing: .22em; text-transform: uppercase;
       cursor: pointer; transition: all .25s; margin-top: 8px;
     }
-    .form-submit:hover { background: var(--brass); color: var(--ink); transform: translateY(-2px); }
+    .form-submit:hover { background: var(--accent-d); color: var(--white); transform: translateY(-2px); }
     .form-submit:disabled { opacity: .6; transform: none; cursor: not-allowed; }
 
     .form-msg { padding: 14px 18px; border-radius: var(--r); font-size: .88rem; margin-top: 16px; display: none; }
@@ -575,12 +567,12 @@
     .contact-item { display: flex; align-items: flex-start; gap: 16px; }
     .contact-item-icon {
       width: 46px; height: 46px; border-radius: 50%;
-      background: var(--ink); color: var(--brass);
+      background: var(--ink); color: var(--accent);
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .contact-item-label { font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .22em; color: var(--text3); }
     .contact-item-val { font-size: 1rem; color: var(--ink); font-weight: 600; margin-top: 2px; }
-    .contact-item-val a:hover { color: var(--brass-d); }
+    .contact-item-val a:hover { color: var(--accent-d); }
 
     .contact-map {
       border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--border);
@@ -589,6 +581,12 @@
       color: var(--text3); font-size: .9rem;
       filter: grayscale(.35) contrast(1.05);
     }
+
+    .map-consent { text-align: center; padding: 32px 24px; max-width: 420px; color: var(--text2); }
+    .map-consent svg { color: var(--accent-d); margin: 0 auto 14px; display: block; }
+    .map-consent p { font-size: .86rem; line-height: 1.6; }
+    .map-consent-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+    .map-consent .btn { padding: 12px 18px; }
 
     .hours-grid {
       display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 32px;
@@ -609,12 +607,24 @@
     footer { background: var(--ink); padding: 64px 0 36px; color: var(--white); }
     .footer-top { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding-bottom: 36px; border-bottom: 1px solid var(--line-d); }
     .footer-motto { font-family: var(--serif); font-style: italic; font-size: 1.5rem; color: rgba(255,255,255,.7); }
-    .footer-motto em { color: var(--brass); }
+    .footer-motto em { color: var(--accent); }
     .footer-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-top: 28px; }
     .footer-copy { font-size: .78rem; color: rgba(255,255,255,.4); }
     .footer-links { display: flex; gap: 22px; flex-wrap: wrap; }
     .footer-links a { font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.5); transition: color .2s; }
-    .footer-links a:hover { color: var(--brass-l); }
+    .footer-links a:hover, .footer-privacy:hover { color: var(--accent-l); }
+    .footer-privacy { background: none; border: none; padding: 0; cursor: pointer; font-family: var(--sans); font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.5); transition: color .2s; }
+    .footer-legal { display: flex; align-items: center; gap: 28px; padding: 28px 0; border-bottom: 1px solid var(--line-d); flex-wrap: wrap; }
+    .complaints-badge {
+      display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0;
+      background: var(--white); color: #C8102E; padding: 10px 16px; border-radius: 4px;
+    }
+    .complaints-badge strong { display: block; font-size: .8rem; color: #1B1915; line-height: 1.2; }
+    .complaints-badge small { display: block; font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: #C8102E; }
+    .complaints-badge:hover { box-shadow: 0 0 0 2px var(--accent); }
+    .footer-ral { flex: 1; min-width: 260px; font-size: .76rem; line-height: 1.65; color: rgba(255,255,255,.45); }
+    .footer-ral a { color: rgba(255,255,255,.7); border-bottom: 1px solid rgba(255,255,255,.2); }
+    .footer-ral a:hover { color: var(--accent-l); }
 
     /* ── Custom calendar ───────────────────────────── */
     .cal-widget {
@@ -626,7 +636,7 @@
       background: none; border: none; color: rgba(255,255,255,.7); cursor: pointer;
       font-size: 1.3rem; padding: 2px 8px; border-radius: 2px; line-height: 1; transition: color .2s, background .2s;
     }
-    .cal-nav:hover { color: var(--brass); background: rgba(255,255,255,.08); }
+    .cal-nav:hover { color: var(--accent); background: rgba(255,255,255,.08); }
     .cal-month { font-family: var(--serif); font-size: 1.1rem; font-weight: 600; color: var(--white); letter-spacing: .04em; }
     .cal-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--bone); padding: 7px 6px 5px; }
     .cal-dow { text-align: center; font-size: .62rem; font-weight: 700; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; }
@@ -636,13 +646,13 @@
       border-radius: 50%; font-size: .84rem; cursor: pointer; border: none; background: none;
       color: var(--text); font-family: var(--sans); font-weight: 500; transition: background .15s, color .15s;
     }
-    .cal-day.available:not(.selected):hover { background: var(--bone); color: var(--brass-d); }
+    .cal-day.available:not(.selected):hover { background: var(--bone); color: var(--accent-d); }
     .cal-day.unavailable,
     .cal-day.past { color: var(--border); cursor: default; }
-    .cal-day.today { border: 1px solid var(--brass); color: var(--brass-d); font-weight: 700; }
+    .cal-day.today { border: 1px solid var(--accent); color: var(--accent-d); font-weight: 700; }
     .cal-day.today.unavailable,
     .cal-day.today.past { border-color: var(--border); color: var(--border); }
-    .cal-day.selected { background: var(--ink) !important; color: var(--brass) !important; font-weight: 700; }
+    .cal-day.selected { background: var(--ink) !important; color: var(--accent) !important; font-weight: 700; }
     .cal-day.empty { cursor: default; }
 
     /* ── Service option cards (booking form) ────────── */
@@ -657,10 +667,10 @@
     .svc-option.selected .svc-option-name { color: var(--white); }
     .svc-option.selected .svc-option-dur,
     .svc-option.selected .svc-option-desc { color: rgba(255,255,255,.6); }
-    .svc-option.selected .svc-option-price { color: var(--brass); }
+    .svc-option.selected .svc-option-price { color: var(--accent); }
     .svc-option-name { font-size: .92rem; font-weight: 700; color: var(--ink); }
     .svc-option-dur  { font-size: .74rem; color: var(--text3); }
-    .svc-option-price { font-family: var(--serif); font-size: 1.1rem; font-weight: 700; color: var(--brass-d); margin-top: 2px; }
+    .svc-option-price { font-family: var(--serif); font-size: 1.1rem; font-weight: 700; color: var(--accent-d); margin-top: 2px; }
     .svc-option-desc { font-size: .75rem; color: var(--text2); line-height: 1.4; margin-top: 2px; max-width: 190px; }
 
     /* ── Mobile nav overlay ─────────────────────────── */
@@ -670,7 +680,7 @@
     }
     .mobile-menu.open { display: flex; }
     .mobile-menu a:not(.btn) { font-family: var(--serif); font-size: 2rem; color: var(--white); font-weight: 500; }
-    .mobile-menu a:not(.btn):hover { color: var(--brass); }
+    .mobile-menu a:not(.btn):hover { color: var(--accent); }
     .mobile-menu-close {
       position: absolute; top: 22px; right: 22px; background: none; border: none;
       color: white; font-size: 1.6rem; cursor: pointer;
@@ -683,11 +693,7 @@
   <nav class="nav" id="nav">
     <div class="container nav-inner">
       <a href="#inicio" class="nav-logo" aria-label="Intemporal Barbearia — início">
-        <span class="nav-logo-mark">I</span>
-        <span class="nav-logo-text">
-          <span class="nav-logo-name">Intemporal</span>
-          <span class="nav-logo-sub">Barbearia</span>
-        </span>
+        <img src="/assets/logo-wordmark.png" alt="Intemporal Barbearia" width="321" height="77">
       </a>
       <ul class="nav-links">
         <li><a href="#sobre">Sobre</a></li>
@@ -753,8 +759,8 @@
               <defs>
                 <path id="sealCircle" d="M200,200 m-176,0 a176,176 0 1,1 352,0 a176,176 0 1,1 -352,0"/>
               </defs>
-              <circle cx="200" cy="200" r="196" fill="none" stroke="rgba(194,154,91,.35)" stroke-width="1"/>
-              <circle cx="200" cy="200" r="158" fill="none" stroke="rgba(194,154,91,.2)" stroke-width="1" stroke-dasharray="2 6"/>
+              <circle cx="200" cy="200" r="196" fill="none" stroke="rgba(224,69,74,.35)" stroke-width="1"/>
+              <circle cx="200" cy="200" r="158" fill="none" stroke="rgba(224,69,74,.2)" stroke-width="1" stroke-dasharray="2 6"/>
               <text><textPath href="#sealCircle" startOffset="0">Intemporal ✦ Barbearia ✦ Corte ✦ Barba ✦ Navalha ✦ Rua de Palme 277 ✦</textPath></text>
             </svg>
             <div class="seal-core">
@@ -918,7 +924,7 @@
           <a href="#agendamento" class="svc-link">Marcar →</a>
         </div>
       </div>
-      <p class="services-note" id="servicesNote">Preços e durações atualizados na marcação online. Dúvidas? Fala connosco no <a href="https://www.instagram.com/intemporal.barbearia/" target="_blank" rel="noopener">Instagram</a>.</p>
+      <p class="services-note" id="servicesNote">Preços (com IVA incluído) e durações atualizados na marcação online. Dúvidas? Fala connosco no <a href="https://www.instagram.com/intemporal.barbearia/" target="_blank" rel="noopener">Instagram</a>.</p>
     </div>
   </section>
 
@@ -1055,7 +1061,7 @@
             <div class="consent-box">
               <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
                 <input type="checkbox" id="bConsent" required style="margin-top:2px;flex-shrink:0;accent-color:var(--ink);width:15px;height:15px;cursor:pointer">
-                <span>Li e aceito o tratamento dos meus dados pessoais (nome, e-mail e telefone) para gestão desta marcação, nos termos do RGPD. <button type="button" id="openPrivacy" style="background:none;border:none;padding:0;color:var(--brass-d);text-decoration:underline;font-size:inherit;cursor:pointer;font-family:inherit">Política de Privacidade</button>.</span>
+                <span>Li e aceito o tratamento dos meus dados pessoais (nome, e-mail e telefone) para gestão desta marcação, nos termos do RGPD. <button type="button" id="openPrivacy" style="background:none;border:none;padding:0;color:var(--accent-d);text-decoration:underline;font-size:inherit;cursor:pointer;font-family:inherit">Política de Privacidade</button>.</span>
               </label>
             </div>
 
@@ -1128,11 +1134,14 @@
 
         <div class="reveal reveal-delay-2">
           <div class="contact-map" id="contactMap">
-            <iframe
-              src="https://maps.google.com/maps?q=Intemporal%20Barbearia%2C%20Rua%20de%20Palme%20277&output=embed&z=15"
-              width="100%" height="100%" style="border:0;display:block"
-              allowfullscreen loading="lazy" title="Mapa — Intemporal Barbearia"
-              referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <div class="map-consent">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <p>O mapa é fornecido pelo Google Maps. Ao carregá-lo, a Google pode recolher dados como o seu endereço IP e instalar cookies.</p>
+              <div class="map-consent-btns">
+                <button type="button" class="btn btn-dark" id="loadMap">Mostrar mapa</button>
+                <a class="btn btn-line" id="openMapLink" href="https://www.google.com/maps/search/?api=1&query=Intemporal%20Barbearia%2C%20Rua%20de%20Palme%20277" target="_blank" rel="noopener">Abrir no Google Maps</a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1144,17 +1153,25 @@
     <div class="container">
       <div class="footer-top">
         <a href="#inicio" class="nav-logo" aria-label="Intemporal Barbearia">
-          <span class="nav-logo-mark">I</span>
-          <span class="nav-logo-text">
-            <span class="nav-logo-name">Intemporal</span>
-            <span class="nav-logo-sub">Barbearia</span>
-          </span>
+          <img src="/assets/logo-wordmark.png" alt="Intemporal Barbearia" width="321" height="77">
         </a>
         <p class="footer-motto">O tempo passa. O estilo <em>fica.</em></p>
       </div>
+      <div class="footer-legal">
+        <a class="complaints-badge" href="https://www.livroreclamacoes.pt/Inicio/" target="_blank" rel="noopener">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span><strong>Livro de Reclamações</strong><small>Eletrónico</small></span>
+        </a>
+        <p class="footer-ral">
+          Em caso de litígio de consumo, o consumidor pode recorrer a uma Entidade de Resolução Alternativa de Litígios de Consumo:
+          <a href="https://www.cniacc.pt" target="_blank" rel="noopener">CNIACC — Centro Nacional de Informação e Arbitragem de Conflitos de Consumo</a><span id="ralLocal"></span>.
+          Mais informações no <a href="https://www.consumidor.gov.pt" target="_blank" rel="noopener">Portal do Consumidor</a>.
+        </p>
+      </div>
       <div class="footer-inner">
-        <p class="footer-copy">© <span id="footerYear"></span> Intemporal Barbearia · Rua de Palme 277</p>
+        <p class="footer-copy">© <span id="footerYear"></span> <span id="legalEntity">Intemporal Barbearia</span><span id="legalNif"></span> · <span id="footerAddress">Rua de Palme 277</span></p>
         <div class="footer-links">
+          <button type="button" class="footer-privacy" data-open-privacy>Privacidade</button>
           <a href="https://www.instagram.com/intemporal.barbearia/" target="_blank" rel="noopener">Instagram</a>
           <a href="https://www.slotbook.cc" target="_blank" rel="noopener">Powered by SlotBook</a>
           <a href="/admin">Backoffice</a>
@@ -1164,6 +1181,27 @@
   </footer>
 
   <script>
+    /* ── Identificação legal (DL 7/2004, art. 10.º) ────────
+       Preencher com os dados oficiais da empresa/empresário. */
+    const LEGAL = {
+      entity: '',   // firma ou nome do empresário em nome individual, ex.: 'Fulano de Tal' ou 'Intemporal, Lda.'
+      nif:    '',   // NIF / NIPC
+      ralLocal: '', // centro de arbitragem de consumo da zona, ex.: 'ou o CIAB — Tribunal Arbitral de Consumo (www.ciab.pt)'
+    };
+    if (LEGAL.entity) document.getElementById('legalEntity').textContent = LEGAL.entity;
+    if (LEGAL.nif)    document.getElementById('legalNif').textContent = ` · NIF ${LEGAL.nif}`;
+    if (LEGAL.ralLocal) document.getElementById('ralLocal').textContent = ` ${LEGAL.ralLocal}`;
+
+    /* ── Map (click-to-load) ─────────────────────────── */
+    let mapQuery = 'Intemporal Barbearia, Rua de Palme 277';
+    document.getElementById('loadMap').addEventListener('click', () => {
+      document.getElementById('contactMap').innerHTML = `<iframe
+        src="https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed&z=15"
+        width="100%" height="100%" style="border:0;display:block"
+        allowfullscreen title="Mapa — Intemporal Barbearia"
+        referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+    });
+
     /* ── Contact address, map & social links from public settings ─ */
     (async () => {
       try {
@@ -1177,12 +1215,10 @@
         const mapEl  = document.getElementById('contactMap');
         if (address) {
           addrEl.textContent = address;
-          const q = encodeURIComponent(`Intemporal Barbearia, ${address}`);
-          mapEl.innerHTML = `<iframe
-            src="https://maps.google.com/maps?q=${q}&output=embed&z=15"
-            width="100%" height="100%" style="border:0;display:block"
-            allowfullscreen loading="lazy" title="Mapa — Intemporal Barbearia"
-            referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+          document.getElementById('footerAddress').textContent = address;
+          mapQuery = `Intemporal Barbearia, ${address}`;
+          document.getElementById('openMapLink').href =
+            `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
         }
 
         // Business phone & email
@@ -1339,9 +1375,7 @@
             const name = rv.authorUrl
               ? `<a href="${esc2(rv.authorUrl)}" target="_blank" rel="noopener nofollow">${esc2(rv.author)}</a>`
               : esc2(rv.author);
-            const avatar = rv.photo
-              ? `<img class="review-avatar" src="${esc2(rv.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer">`
-              : `<span class="review-avatar">${esc2(rv.author.charAt(0).toUpperCase())}</span>`;
+            const avatar = `<span class="review-avatar" aria-hidden="true">${esc2(rv.author.charAt(0).toUpperCase())}</span>`;
             card.innerHTML = `
               <div class="review-stars" aria-label="${rv.rating} em 5 estrelas">${stars(rv.rating)}</div>
               <p class="review-text clamp">“${esc2(rv.text)}”</p>
@@ -1615,7 +1649,7 @@
         grid.appendChild(card);
       });
       const note = document.getElementById('servicesNote');
-      if (note) note.style.display = 'none';
+      if (note) note.innerHTML = 'Preços com IVA incluído à taxa legal em vigor.';
     }
 
     function selectService(btn, svc) {
@@ -1845,14 +1879,13 @@
       document.documentElement.style.setProperty('--py', py);
     }, { passive: true });
   </script>
-  <script defer src="/_vercel/insights/script.js"></script>
 
   <!-- ── Privacy Policy Modal (RGPD) ───────────────────────── -->
   <div id="privacyModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:16px">
     <div style="background:#fff;border-radius:12px;max-width:580px;width:100%;max-height:90vh;overflow-y:auto;padding:32px 28px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)">
       <button id="closePrivacy" type="button" aria-label="Fechar" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888;line-height:1">&#x2715;</button>
       <h2 style="margin:0 0 6px;font-size:1.2rem;color:#1a1a1a">Política de Privacidade</h2>
-      <p style="margin:0 0 20px;font-size:.8rem;color:#999">Regulamento Geral sobre a Proteção de Dados (RGPD — Reg. UE 2016/679)</p>
+      <p style="margin:0 0 20px;font-size:.8rem;color:#999">Regulamento Geral sobre a Proteção de Dados (RGPD — Reg. UE 2016/679) · Lei n.º 58/2019 · Última atualização: outubro de 2026</p>
 
       <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">1. Responsável pelo Tratamento</h3>
       <p id="privacyController" style="margin:0 0 4px;font-size:.88rem;color:#444;line-height:1.6"></p>
@@ -1862,12 +1895,15 @@
       <p style="margin:0 0 16px;font-size:.88rem;color:#444;line-height:1.6">Nome completo, endereço de e-mail e número de telefone fornecidos voluntariamente no formulário de marcação.</p>
 
       <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">3. Finalidade e Base Jurídica</h3>
-      <p style="margin:0 0 16px;font-size:.88rem;color:#444;line-height:1.6">Os seus dados são utilizados exclusivamente para gestão e confirmação da marcação, envio de lembretes e comunicações relacionadas com o serviço agendado. A base jurídica é o seu <strong>consentimento explícito</strong> (Art.º 6.º, n.º 1, al. a) do RGPD).</p>
+      <p style="margin:0 0 16px;font-size:.88rem;color:#444;line-height:1.6">Os seus dados são utilizados exclusivamente para gestão e confirmação da marcação, envio de lembretes e comunicações relacionadas com o serviço agendado. O tratamento é necessário para a realização das diligências pré-contratuais pedidas por si (Art.º 6.º, n.º 1, al. b) do RGPD) e assenta também no seu <strong>consentimento</strong> (al. a)). Não utilizamos os seus dados para marketing nem os vendemos a terceiros.</p>
 
-      <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">4. Prazo de Conservação</h3>
+      <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">4. Destinatários e Subcontratantes</h3>
+      <p style="margin:0 0 16px;font-size:.88rem;color:#444;line-height:1.6">Para prestar o serviço recorremos a prestadores que tratam dados apenas por nossa conta: alojamento do website e base de dados, serviço de envio de e-mail (Resend) e, quando ativo, Google Calendar (Google Ireland Ltd.). Alguns destes prestadores podem tratar dados fora do Espaço Económico Europeu (designadamente nos EUA), ao abrigo do EU-U.S. Data Privacy Framework ou de cláusulas contratuais-tipo aprovadas pela Comissão Europeia.</p>
+
+      <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">5. Prazo de Conservação</h3>
       <p style="margin:0 0 16px;font-size:.88rem;color:#444;line-height:1.6">Os dados são conservados pelo período mínimo necessário à prestação do serviço. Após a realização da marcação, os dados são mantidos por um período máximo de 12 meses, podendo ser eliminados antes mediante pedido.</p>
 
-      <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">5. Os Seus Direitos</h3>
+      <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">6. Os Seus Direitos</h3>
       <p style="margin:0 0 8px;font-size:.88rem;color:#444;line-height:1.6">Nos termos do RGPD, assistem-lhe os seguintes direitos:</p>
       <ul style="margin:0 0 16px;padding-left:18px;font-size:.88rem;color:#444;line-height:1.8">
         <li><strong>Acesso</strong> — consultar os dados que guardamos sobre si</li>
@@ -1879,7 +1915,10 @@
         <li><strong>Retirada do consentimento</strong> — sem prejuízo da licitude do tratamento anterior</li>
       </ul>
 
-      <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">6. Exercício de Direitos e Reclamações</h3>
+      <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">7. Cookies e Conteúdos de Terceiros</h3>
+      <p style="margin:0 0 16px;font-size:.88rem;color:#444;line-height:1.6">Este website não utiliza cookies de publicidade nem de análise, e os tipos de letra são servidos a partir do nosso próprio servidor. O mapa do Google Maps só é carregado se clicar em «Mostrar mapa»; nesse caso a Google pode recolher o seu endereço IP e instalar cookies, de acordo com a <a href="https://policies.google.com/privacy?hl=pt-PT" target="_blank" rel="noopener" style="color:var(--red)">política de privacidade da Google</a>. As avaliações apresentadas são obtidas do Google pelo nosso servidor. As ligações para o Instagram e o Google abrem sites externos, sujeitos às respetivas políticas.</p>
+
+      <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">8. Exercício de Direitos e Reclamações</h3>
       <p id="privacyContact" style="margin:0 0 8px;font-size:.88rem;color:#444;line-height:1.6"></p>
       <p style="margin:0 0 16px;font-size:.88rem;color:#444;line-height:1.6">Tem ainda o direito de apresentar reclamação à autoridade de controlo nacional: <strong>CNPD</strong> — Comissão Nacional de Proteção de Dados (<a href="https://www.cnpd.pt" target="_blank" rel="noopener" style="color:var(--red)">www.cnpd.pt</a>).</p>
 
@@ -1902,7 +1941,9 @@
         const address = gdprAddress       || '';
 
         // Section 1 — Responsável
-        ctrlEl.textContent = name + ' é o responsável pelo tratamento dos dados pessoais recolhidos através deste formulário.';
+        const legalName = LEGAL.entity || name;
+        ctrlEl.textContent = legalName + (LEGAL.nif ? ' (NIF ' + LEGAL.nif + ')' : '') + ', que explora a ' + name + ', é o responsável pelo tratamento dos dados pessoais recolhidos através deste website.';
+        if (!LEGAL.entity || LEGAL.entity === name) ctrlEl.textContent = name + (LEGAL.nif ? ' (NIF ' + LEGAL.nif + ')' : '') + ' é o responsável pelo tratamento dos dados pessoais recolhidos através deste website.';
         const addrEl = document.getElementById('privacyControllerAddress');
         addrEl.textContent = address ? 'Morada: ' + address : '';
         addrEl.style.display = address ? '' : 'none';
@@ -1927,6 +1968,7 @@
       }
 
       if (openBtn) openBtn.addEventListener('click', openModal);
+      document.querySelectorAll('[data-open-privacy]').forEach(function (b) { b.addEventListener('click', openModal); });
       if (close1)  close1.addEventListener('click', closeModal);
       if (close2)  close2.addEventListener('click', closeModal);
       modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });

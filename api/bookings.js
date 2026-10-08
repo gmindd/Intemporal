@@ -246,7 +246,7 @@ module.exports = async function handler(req, res) {
       const locationAdminHtml = address
         ? `<tr><td style="padding:4px 8px;color:#888">Local</td><td style="padding:4px 8px"><strong>${address}</strong></td></tr>`
         : meetLink
-          ? `<tr><td style="padding:4px 8px;color:#888">Meet</td><td style="padding:4px 8px"><a href="${meetLink}" style="color:#B8913F">Entrar na reunião</a></td></tr>`
+          ? `<tr><td style="padding:4px 8px;color:#888">Meet</td><td style="padding:4px 8px"><a href="${meetLink}" style="color:#B30000">Entrar na reunião</a></td></tr>`
           : '';
 
       const desc = [
@@ -278,7 +278,7 @@ module.exports = async function handler(req, res) {
       const slotbookFooter = `
         <hr style="border:none;border-top:1px solid #eee;margin:28px 0 10px">
         <p style="font-size:.72rem;color:#bbb;text-align:center;margin:0">
-          Serviço prestado por <a href="https://www.slotbook.cc" style="color:#C9A84C;text-decoration:none">SlotBook</a>
+          Serviço prestado por <a href="https://www.slotbook.cc" style="color:#B30000;text-decoration:none">SlotBook</a>
         </p>`;
 
       if (notifyEmail && settings.notifyBookings !== false) {
@@ -289,7 +289,7 @@ module.exports = async function handler(req, res) {
             subject: `📅 Nova marcação: ${name} — ${date} às ${time}`,
             html: `
               <div style="font-family:sans-serif;max-width:480px">
-                <h2 style="color:#B8913F">Nova Marcação</h2>
+                <h2 style="color:#B30000">Nova Marcação</h2>
                 <table style="border-collapse:collapse;width:100%">
                   <tr><td style="padding:4px 8px;color:#888">Nome</td><td style="padding:4px 8px"><strong>${name}</strong></td></tr>
                   <tr><td style="padding:4px 8px;color:#888">Email</td><td style="padding:4px 8px">${email}</td></tr>
@@ -309,12 +309,12 @@ module.exports = async function handler(req, res) {
 
       // Location or Meet block for client email
       const locationClientHtml = address
-        ? `<div style="margin-top:16px;padding:14px 18px;background:#f9f5ee;border-radius:8px;border-left:3px solid #B8913F">
+        ? `<div style="margin-top:16px;padding:14px 18px;background:#f9f5ee;border-radius:8px;border-left:3px solid #B30000">
             <p style="margin:0;font-size:.88rem;color:#666">📍 <strong style="color:#333">Local do encontro:</strong></p>
             <p style="margin:6px 0 0;font-weight:600;color:#1A1612">${address}</p>
           </div>`
         : meetLink
-          ? `<p style="margin-top:16px"><a href="${meetLink}" style="display:inline-block;padding:12px 24px;background:#B8913F;color:#fff;text-decoration:none;border-radius:8px;font-weight:500">Entrar na reunião Google Meet</a></p>`
+          ? `<p style="margin-top:16px"><a href="${meetLink}" style="display:inline-block;padding:12px 24px;background:#B30000;color:#fff;text-decoration:none;border-radius:8px;font-weight:500">Entrar na reunião Google Meet</a></p>`
           : '';
 
       try {
@@ -329,7 +329,7 @@ module.exports = async function handler(req, res) {
           }],
           html: `
             <div style="font-family:sans-serif;max-width:480px">
-              <h2 style="color:#B8913F">Marcação Confirmada!</h2>
+              <h2 style="color:#B30000">Marcação Confirmada!</h2>
               <p>Olá <strong>${name}</strong>,</p>
               <p>A tua marcação foi confirmada para <strong>${date} às ${time}</strong>.</p>
               <table style="border-collapse:collapse;width:100%;margin-top:12px">
@@ -422,7 +422,7 @@ module.exports = async function handler(req, res) {
         const outlookUrl = outlookCalendarUrl(`${updated.name} — ${displayLabel}`, startLocal, endLocal, desc, address || null);
 
         const locationHtml = address
-          ? `<div style="margin-top:16px;padding:14px 18px;background:#f9f5ee;border-radius:8px;border-left:3px solid #B8913F">
+          ? `<div style="margin-top:16px;padding:14px 18px;background:#f9f5ee;border-radius:8px;border-left:3px solid #B30000">
               <p style="margin:0;font-size:.88rem;color:#666">📍 <strong style="color:#333">Local:</strong></p>
               <p style="margin:6px 0 0;font-weight:600;color:#1A1612">${address}</p>
             </div>`
@@ -440,7 +440,7 @@ module.exports = async function handler(req, res) {
             }],
             html: `
               <div style="font-family:sans-serif;max-width:480px">
-                <h2 style="color:#B8913F">Marcação Reagendada</h2>
+                <h2 style="color:#B30000">Marcação Reagendada</h2>
                 <p>Olá <strong>${updated.name}</strong>,</p>
                 <p>A tua marcação foi reagendada para <strong>${date} às ${time}</strong>.</p>
                 <table style="border-collapse:collapse;width:100%;margin-top:12px">

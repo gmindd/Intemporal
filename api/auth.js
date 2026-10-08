@@ -39,11 +39,11 @@ module.exports = async function handler(req, res) {
             subject: 'Recuperação de password — SlotBook',
             html: `
               <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
-                <h2 style="color:#C9A84C">SlotBook — Recuperar Password</h2>
+                <h2 style="color:#B30000">SlotBook — Recuperar Password</h2>
                 <p>Recebemos um pedido de recuperação de password para a tua conta.</p>
                 <p>Clica no botão abaixo para definir uma nova password. O link é válido durante <strong>1 hora</strong>.</p>
                 <p style="margin:28px 0">
-                  <a href="${link}" style="background:#C9A84C;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600">
+                  <a href="${link}" style="background:#B30000;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600">
                     Repor password
                   </a>
                 </p>
