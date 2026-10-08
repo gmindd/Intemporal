@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SlotBook — Primeira configuração</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+  <style>
+    .setup-hint {
+      font-size: .82rem;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+    .setup-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .82rem;
+      color: var(--text3);
+      margin-bottom: 28px;
+    }
+    .setup-step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gold);
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body class="login-body">
+
+  <div class="login-wrap" style="max-width:440px">
+    <div class="login-logo">Slot<em>Book</em></div>
+    <p class="login-sub">Primeira configuração</p>
+
+    <div class="setup-step">
+      <div class="setup-step-dot"></div>
+      <span>Define o teu acesso ao backoffice. Podes alterar estes dados mais tarde.</span>
+    </div>
+
+    <form class="login-form" id="setupForm" novalidate>
+      <div class="af-group">
+        <label for="semail">Email de acesso</label>
+        <input type="email" id="semail" placeholder="email@exemplo.com" autocomplete="email" required>
+      </div>
+      <div class="af-group">
+        <label for="spassword">Password</label>
+        <input type="password" id="spassword" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required>
+        <p class="setup-hint">Mínimo 8 caracteres.</p>
+      </div>
+      <div class="af-group">
+        <label for="spassword2">Confirmar password</label>
+        <input type="password" id="spassword2" placeholder="Repete a password" autocomplete="new-password" required>
+      </div>
+      <div class="login-err" id="setupErr"></div>
+      <button type="submit" class="btn-gold" id="setupBtn">Criar conta e entrar</button>
+    </form>
+  </div>
+
+  <script>
+    // If already configured, redirect to login
+    fetch('/api/setup', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => { if (!d.needsSetup) location.replace('/admin'); })
+      .catch(() => {});
+
+    document.getElementById('setupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('setupBtn');
+      const err = document.getElementById('setupErr');
+      err.textContent = '';
+
+      const email     = document.getElementById('semail').value.trim();
+      const password  = document.getElementById('spassword').value;
+      const password2 = document.getElementById('spassword2').value;
+
+      if (password !== password2) {
+        err.textContent = 'As passwords não coincidem.';
+        return;
+      }
+      if (password.length < 8) {
+        err.textContent = 'A password deve ter pelo menos 8 caracteres.';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'A criar conta…';
+
+      try {
+        const res = await fetch('/api/setup', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          location.replace('/admin/dashboard');
+        } else {
+          err.textContent = data.error || 'Erro ao criar conta.';
+          btn.disabled = false;
+          btn.textContent = 'Criar conta e entrar';
+        }
+      } catch {
+        err.textContent = 'Erro de rede. Tenta novamente.';
+        btn.disabled = false;
+        btn.textContent = 'Criar conta e entrar';
+      }
+    });
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

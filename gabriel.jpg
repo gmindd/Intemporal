@@ -1,0 +1,126 @@
+const { requireAdmin } = require('../lib/auth');
+const { getAuthorizedClient } = require('../lib/google');
+const { google } = require('googleapis');
+const { kv } = require('@vercel/kv');
+
+const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+const DEFAULT_SCHEDULE = {
+  mon: { active: true,  start1: '09:00', end1: '13:00', start2: '14:00', end2: '18:00' },
+  tue: { active: true,  start1: '09:00', end1: '13:00', start2: '14:00', end2: '18:00' },
+  wed: { active: true,  start1: '09:00', end1: '13:00', start2: '14:00', end2: '18:00' },
+  thu: { active: true,  start1: '09:00', end1: '13:00', start2: '14:00', end2: '18:00' },
+  fri: { active: true,  start1: '09:00', end1: '13:00', start2: '14:00', end2: '18:00' },
+  sat: { active: false, start1: '09:00', end1: '13:00', start2: '',      end2: ''      },
+  sun: { active: false, start1: '',      end1: '',       start2: '',      end2: ''      },
+};
+
+function toMinutes(t) {
+  if (!t) return null;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function toTime(m) {
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+
+function generateSlots(start, end, duration) {
+  const slots = [];
+  const s = toMinutes(start);
+  const e = toMinutes(end);
+  if (s === null || e === null) return slots;
+  for (let m = s; m + duration <= e; m += duration) slots.push(toTime(m));
+  return slots;
+}
+
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // POST — save schedule (admin only)
+  if (req.method === 'POST') {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+    await kv.set('schedule', req.body);
+    return res.status(200).json({ ok: true });
+  }
+
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+
+  const schedule = (await kv.get('schedule')) || DEFAULT_SCHEDULE;
+
+  // GET without date — return the full schedule (used by backoffice and calendar init)
+  const { date } = req.query;
+  if (!date) return res.status(200).json(schedule);
+
+  // GET with ?date=DD/MM/YYYY — return available slots for that date
+  const [day, month, year] = date.split('/').map(Number);
+  const dateObj = new Date(year, month - 1, day);
+  const cfg     = schedule[DAY_KEYS[dateObj.getDay()]];
+
+  if (!cfg || !cfg.active) return res.status(200).json({ slots: [] });
+
+  const duration = 30;
+  let slots = [
+    ...generateSlots(cfg.start1, cfg.end1, duration),
+    ...generateSlots(cfg.start2, cfg.end2, duration),
+  ];
+
+  // Compute Lisbon UTC offset for this date (Portugal: UTC+0 winter, UTC+1 summer)
+  const lastSunMar = new Date(Date.UTC(year, 2, 31));
+  lastSunMar.setUTCDate(31 - lastSunMar.getUTCDay());
+  const lastSunOct = new Date(Date.UTC(year, 9, 31));
+  lastSunOct.setUTCDate(31 - lastSunOct.getUTCDay());
+  const dateUTC  = new Date(Date.UTC(year, month - 1, day));
+  const offsetMs = (dateUTC >= lastSunMar && dateUTC < lastSunOct) ? 3600000 : 0;
+
+  // Remove past slots and slots within 2-hour buffer (today only, in Lisbon time)
+  const nowLisbon   = new Date(Date.now() + offsetMs);
+  const todayStr    = `${String(nowLisbon.getUTCDate()).padStart(2,'0')}/${String(nowLisbon.getUTCMonth()+1).padStart(2,'0')}/${nowLisbon.getUTCFullYear()}`;
+  if (date === todayStr) {
+    const cutoffMins = nowLisbon.getUTCHours() * 60 + nowLisbon.getUTCMinutes() + 120;
+    slots = slots.filter(slot => toMinutes(slot) > cutoffMins);
+  }
+
+  // Remove slots already booked in KV
+  const raw         = await kv.lrange('bookings', 0, 199);
+  const bookedTimes = raw
+    .map(b => (typeof b === 'string' ? JSON.parse(b) : b))
+    .filter(b => b.date === date)
+    .map(b => b.time);
+  slots = slots.filter(s => !bookedTimes.includes(s));
+
+  // Remove slots busy in Google Calendar
+  try {
+    const auth = await getAuthorizedClient();
+    if (!auth) {
+      console.log('[schedule/slots] Google Calendar não ligado — a ignorar freebusy');
+    } else {
+      const calendar = google.calendar({ version: 'v3', auth });
+      // Full day in UTC covers all Lisbon hours (UTC+0/+1)
+      const timeMin = new Date(Date.UTC(year, month - 1, day, 0, 0, 0)).toISOString();
+      const timeMax = new Date(Date.UTC(year, month - 1, day, 23, 59, 59)).toISOString();
+      const { data } = await calendar.freebusy.query({
+        requestBody: { timeMin, timeMax, timeZone: 'Europe/Lisbon', items: [{ id: 'primary' }] },
+      });
+      const busy = data.calendars?.primary?.busy || [];
+      console.log(`[schedule/slots] freebusy ${date}: ${busy.length} período(s) ocupado(s)`);
+
+      slots = slots.filter(slot => {
+        const [h, m]  = slot.split(':').map(Number);
+        const startUTC = new Date(Date.UTC(year, month - 1, day, h, m) - offsetMs);
+        const endUTC   = new Date(startUTC.getTime() + duration * 60000);
+        const blocked  = busy.some(b => startUTC < new Date(b.end) && endUTC > new Date(b.start));
+        if (blocked) console.log(`[schedule/slots] slot ${slot} bloqueado pelo Google Calendar`);
+        return !blocked;
+      });
+    }
+  } catch (e) {
+    console.error('[schedule/slots] freebusy error:', e.message);
+  }
+
+  return res.status(200).json({ slots });
+};

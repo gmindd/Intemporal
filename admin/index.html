@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SlotBook — Backoffice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body class="login-body">
+
+  <div class="login-wrap">
+    <div class="login-logo">Slot<em>Book</em></div>
+    <p class="login-sub">Backoffice</p>
+
+    <form class="login-form" id="loginForm" novalidate>
+      <div class="af-group">
+        <label for="lemail">Email</label>
+        <input type="email" id="lemail" placeholder="email@exemplo.com" autocomplete="email" required>
+      </div>
+      <div class="af-group">
+        <label for="lpassword">Password</label>
+        <input type="password" id="lpassword" placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <div class="login-err" id="loginErr"></div>
+      <button type="submit" class="btn-gold" id="loginBtn">Entrar</button>
+    </form>
+
+    <button type="button" class="login-recover-link" id="recoverToggle">Recuperar password</button>
+
+    <!-- Recover form (hidden by default) -->
+    <form class="login-form" id="recoverForm" novalidate style="display:none">
+      <p style="font-size:.85rem;color:var(--text3);margin-bottom:16px">Vais receber um email com um link para repor a tua password.</p>
+      <div class="af-group">
+        <label for="recoverEmail">Email da conta</label>
+        <input type="email" id="recoverEmail" placeholder="email@exemplo.com" autocomplete="email" required>
+      </div>
+      <div class="login-err" id="recoverErr"></div>
+      <div id="recoverOk" style="display:none;color:#2ecc71;font-size:.85rem;margin-bottom:12px">Email enviado! Verifica a tua caixa de entrada.</div>
+      <button type="submit" class="btn-gold" id="recoverBtn">Enviar link</button>
+      <button type="button" class="login-recover-link" id="recoverBack" style="display:block;margin-top:12px">← Voltar ao login</button>
+    </form>
+
+    <!-- Reset password form (shown when ?reset=TOKEN in URL) -->
+    <form class="login-form" id="resetForm" novalidate style="display:none">
+      <p style="font-size:.85rem;color:var(--text3);margin-bottom:16px">Define a tua nova password.</p>
+      <div class="af-group">
+        <label for="resetPass">Nova password</label>
+        <input type="password" id="resetPass" placeholder="mínimo 8 caracteres" autocomplete="new-password" required>
+      </div>
+      <div class="af-group">
+        <label for="resetPass2">Confirmar password</label>
+        <input type="password" id="resetPass2" placeholder="repete a password" autocomplete="new-password" required>
+      </div>
+      <div class="login-err" id="resetErr"></div>
+      <button type="submit" class="btn-gold" id="resetBtn">Guardar nova password</button>
+    </form>
+
+    <a href="/" class="login-back">← Voltar ao site</a>
+  </div>
+
+  <script>
+    fetch('/api/setup', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => { if (d.needsSetup) location.replace('/admin/setup'); })
+      .catch(() => {});
+
+    fetch('/api/auth', { credentials: 'include' })
+      .then(r => { if (r.ok) location.replace('/admin/dashboard'); })
+      .catch(() => {});
+
+    // Check for reset token in URL
+    const resetToken = new URLSearchParams(location.search).get('reset');
+    if (resetToken) {
+      document.getElementById('loginForm').style.display    = 'none';
+      document.getElementById('recoverToggle').style.display = 'none';
+      document.getElementById('resetForm').style.display   = '';
+    }
+
+    // Login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const err = document.getElementById('loginErr');
+      btn.disabled = true;
+      btn.textContent = 'A entrar…';
+      err.textContent = '';
+      const email    = document.getElementById('lemail').value.trim();
+      const password = document.getElementById('lpassword').value;
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          location.replace('/admin/dashboard');
+        } else if (data.needsSetup) {
+          location.replace('/admin/setup');
+        } else {
+          err.textContent = data.error || 'Email ou password incorretos.';
+          btn.disabled = false;
+          btn.textContent = 'Entrar';
+        }
+      } catch {
+        err.textContent = 'Erro de rede. Tenta novamente.';
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+      }
+    });
+
+    // Toggle recover form
+    document.getElementById('recoverToggle').addEventListener('click', () => {
+      document.getElementById('loginForm').style.display    = 'none';
+      document.getElementById('recoverToggle').style.display = 'none';
+      document.getElementById('recoverForm').style.display  = '';
+    });
+    document.getElementById('recoverBack').addEventListener('click', () => {
+      document.getElementById('recoverForm').style.display  = 'none';
+      document.getElementById('recoverToggle').style.display = '';
+      document.getElementById('loginForm').style.display    = '';
+    });
+
+    // Recover form
+    document.getElementById('recoverForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn  = document.getElementById('recoverBtn');
+      const err  = document.getElementById('recoverErr');
+      const ok   = document.getElementById('recoverOk');
+      btn.disabled = true;
+      btn.textContent = 'A enviar…';
+      err.textContent = '';
+      ok.style.display = 'none';
+      const email = document.getElementById('recoverEmail').value.trim();
+      try {
+        await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'recover', email }),
+        });
+        ok.style.display = 'block';
+      } catch {
+        err.textContent = 'Erro de rede. Tenta novamente.';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Enviar link';
+    });
+
+    // Reset form
+    document.getElementById('resetForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn  = document.getElementById('resetBtn');
+      const err  = document.getElementById('resetErr');
+      const p1   = document.getElementById('resetPass').value;
+      const p2   = document.getElementById('resetPass2').value;
+      err.textContent = '';
+      if (p1 !== p2) { err.textContent = 'As passwords não coincidem.'; return; }
+      btn.disabled = true;
+      btn.textContent = 'A guardar…';
+      try {
+        const res = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reset', token: resetToken, newPassword: p1 }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          location.replace('/admin?reset_ok=1');
+        } else {
+          err.textContent = data.error || 'Erro ao repor password.';
+          btn.disabled = false;
+          btn.textContent = 'Guardar nova password';
+        }
+      } catch {
+        err.textContent = 'Erro de rede. Tenta novamente.';
+        btn.disabled = false;
+        btn.textContent = 'Guardar nova password';
+      }
+    });
+
+    // Show success message after reset
+    if (new URLSearchParams(location.search).get('reset_ok')) {
+      document.getElementById('loginErr').style.color = '#2ecc71';
+      document.getElementById('loginErr').textContent = 'Password reposta com sucesso! Faz login.';
+    }
+  </script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

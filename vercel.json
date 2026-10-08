@@ -1,0 +1,21 @@
+{
+  "env": {
+    "SITE_KEY": "SLOTBOOK-PRO"
+  },
+  "rewrites": [
+    { "source": "/admin/dashboard", "destination": "/admin/dashboard.html" },
+    { "source": "/admin/setup",     "destination": "/admin/setup.html"     },
+    { "source": "/admin",           "destination": "/admin/index.html"     },
+
+    { "source": "/api/google/auth",        "destination": "/api/google?action=auth"        },
+    { "source": "/api/google/callback",    "destination": "/api/google?action=callback"    },
+    { "source": "/api/google/credentials", "destination": "/api/google?action=credentials" },
+    { "source": "/api/google/disconnect",  "destination": "/api/google?action=disconnect"  },
+    { "source": "/api/google/status",      "destination": "/api/google?action=status"      },
+    { "source": "/api/google/test",        "destination": "/api/google?action=test"        },
+
+    { "source": "/api/public-settings",    "destination": "/api/public"                    },
+    { "source": "/api/slots",              "destination": "/api/public?resource=slots"     },
+    { "source": "/api/reset",              "destination": "/api/settings"                  }
+  ]
+}

@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SlotBook — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+  <!-- ─── Header ───────────────────────────────────────── -->
+  <header class="db-header">
+    <div class="db-logo">Slot<em>Book</em> <span>Backoffice</span></div>
+    <div class="db-header-right">
+      <span class="db-user" id="dbUser"></span>
+      <button class="btn-outline-sm" id="logoutBtn">Sair</button>
+    </div>
+  </header>
+
+  <!-- ─── Nav Tabs ─────────────────────────────────────── -->
+  <nav class="db-tabs" role="tablist">
+    <button class="dbt active" data-tab="bookings"  role="tab" aria-selected="true">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Marcações
+    </button>
+    <button class="dbt" data-tab="whatsapp" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      WhatsApp
+    </button>
+    <button class="dbt" data-tab="schedule" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+      Horário
+    </button>
+    <button class="dbt" data-tab="services" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+      Serviços
+    </button>
+    <button class="dbt" data-tab="calendar" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Google Calendar
+    </button>
+    <button class="dbt" data-tab="settings" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Configurações
+    </button>
+    <button class="dbt" data-tab="account" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Conta
+    </button>
+  </nav>
+
+  <!-- ─── Content ──────────────────────────────────────── -->
+  <main class="db-main">
+
+    <!-- ── Bookings tab ─── -->
+    <section class="db-section active" id="tab-bookings">
+      <div class="sec-head">
+        <h1 class="sec-title">Marcações</h1>
+        <button class="btn-outline-sm" id="refreshBtn">↺ Atualizar</button>
+      </div>
+
+      <div id="bookingsState" class="state-msg">A carregar…</div>
+
+      <div class="week-grid" id="weekGrid"></div>
+      <p class="bookings-empty" id="bookingsEmpty" style="display:none">Sem marcações nos próximos 7 dias.</p>
+    </section>
+
+    <!-- ── WhatsApp tab ─── -->
+    <section class="db-section" id="tab-whatsapp">
+      <div class="sec-head">
+        <h1 class="sec-title">Lembretes WhatsApp</h1>
+        <button class="btn-outline-sm" id="waRefreshBtn">↺ Atualizar</button>
+      </div>
+
+      <div id="waState" class="state-msg">A carregar…</div>
+
+      <div class="wa-cols" style="display:none">
+        <div class="settings-card">
+          <h2 class="wa-col-title">Hoje <span class="wa-col-date" id="waTodayDate"></span></h2>
+          <p class="sf-hint" style="margin-bottom:14px">Usa o template «marcações de hoje».</p>
+          <div id="waTodayList"></div>
+        </div>
+        <div class="settings-card">
+          <h2 class="wa-col-title">Próximo dia útil <span class="wa-col-date" id="waNextDate"></span></h2>
+          <p class="sf-hint" style="margin-bottom:14px">Calculado a partir do horário de atendimento — dias fechados e indisponibilidades de dia inteiro são saltados.</p>
+          <div id="waNextList"></div>
+        </div>
+      </div>
+
+      <div class="settings-card" style="margin-top:20px;max-width:720px">
+        <h2 class="wa-col-title" style="margin-bottom:6px">Templates das mensagens</h2>
+        <p class="sf-hint" style="margin-bottom:14px">
+          Escreve a mensagem como quiseres e usa os campos automáticos abaixo — são substituídos pelos dados reais de cada marcação e pelas informações do negócio definidas em Configurações:<br>
+          <code>{nome}</code> nome do cliente&ensp;·&ensp;<code>{hora}</code> hora da marcação&ensp;·&ensp;<code>{data}</code> data (DD/MM/AAAA)&ensp;·&ensp;<code>{servico}</code> serviço&ensp;·&ensp;<code>{duracao}</code> duração em minutos&ensp;·&ensp;<code>{negocio}</code> nome do negócio&ensp;·&ensp;<code>{telefone}</code> contacto do negócio&ensp;·&ensp;<code>{morada}</code> morada&ensp;·&ensp;<code>{email}</code> email do negócio
+        </p>
+
+        <div class="sf-group">
+          <label for="waTplToday">Template — marcações de hoje</label>
+          <textarea id="waTplToday" rows="3" class="wa-tpl"></textarea>
+        </div>
+
+        <div class="sf-group">
+          <label for="waTplNext">Template — próximo dia útil</label>
+          <textarea id="waTplNext" rows="3" class="wa-tpl"></textarea>
+        </div>
+
+        <div class="sf-msg" id="waTplMsg"></div>
+        <button type="button" class="btn-gold" id="waTplSave">Guardar templates</button>
+      </div>
+    </section>
+
+    <!-- ── Schedule tab ─── -->
+    <section class="db-section" id="tab-schedule">
+      <div class="sec-head">
+        <h1 class="sec-title">Horário de Atendimento</h1>
+      </div>
+
+      <div class="settings-card" style="max-width:720px">
+        <p class="sf-hint" style="margin-bottom:24px">Define os dias e horários em que aceitas marcações. Podes configurar dois períodos por dia (ex: manhã e tarde com pausa para almoço).</p>
+
+        <div class="sched-grid">
+          <div class="sched-header">
+            <div class="sg-col-day">Dia</div>
+            <div class="sg-col-on"></div>
+            <div class="sg-col-period">
+              <span class="sg-period-label">Manhã</span>
+              <div class="sg-time-pair"><span>De</span><span>Até</span></div>
+            </div>
+            <div class="sg-col-period">
+              <span class="sg-period-label">Tarde</span>
+              <div class="sg-time-pair"><span>De</span><span>Até</span></div>
+            </div>
+          </div>
+
+          <div class="sched-row" data-day="mon">
+            <div class="sg-col-day">Segunda</div>
+            <div class="sg-col-on"><label class="sg-toggle"><input type="checkbox" class="sg-active"><span class="sg-slider"></span></label></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start1"><input type="time" class="sg-t end1"></div></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start2"><input type="time" class="sg-t end2"></div></div>
+          </div>
+          <div class="sched-row" data-day="tue">
+            <div class="sg-col-day">Terça</div>
+            <div class="sg-col-on"><label class="sg-toggle"><input type="checkbox" class="sg-active"><span class="sg-slider"></span></label></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start1"><input type="time" class="sg-t end1"></div></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start2"><input type="time" class="sg-t end2"></div></div>
+          </div>
+          <div class="sched-row" data-day="wed">
+            <div class="sg-col-day">Quarta</div>
+            <div class="sg-col-on"><label class="sg-toggle"><input type="checkbox" class="sg-active"><span class="sg-slider"></span></label></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start1"><input type="time" class="sg-t end1"></div></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start2"><input type="time" class="sg-t end2"></div></div>
+          </div>
+          <div class="sched-row" data-day="thu">
+            <div class="sg-col-day">Quinta</div>
+            <div class="sg-col-on"><label class="sg-toggle"><input type="checkbox" class="sg-active"><span class="sg-slider"></span></label></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start1"><input type="time" class="sg-t end1"></div></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start2"><input type="time" class="sg-t end2"></div></div>
+          </div>
+          <div class="sched-row" data-day="fri">
+            <div class="sg-col-day">Sexta</div>
+            <div class="sg-col-on"><label class="sg-toggle"><input type="checkbox" class="sg-active"><span class="sg-slider"></span></label></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start1"><input type="time" class="sg-t end1"></div></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start2"><input type="time" class="sg-t end2"></div></div>
+          </div>
+          <div class="sched-row" data-day="sat">
+            <div class="sg-col-day">Sábado</div>
+            <div class="sg-col-on"><label class="sg-toggle"><input type="checkbox" class="sg-active"><span class="sg-slider"></span></label></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start1"><input type="time" class="sg-t end1"></div></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start2"><input type="time" class="sg-t end2"></div></div>
+          </div>
+          <div class="sched-row" data-day="sun">
+            <div class="sg-col-day">Domingo</div>
+            <div class="sg-col-on"><label class="sg-toggle"><input type="checkbox" class="sg-active"><span class="sg-slider"></span></label></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start1"><input type="time" class="sg-t end1"></div></div>
+            <div class="sg-col-period"><div class="sg-time-pair"><input type="time" class="sg-t start2"><input type="time" class="sg-t end2"></div></div>
+          </div>
+        </div>
+
+        <div class="sf-footer" style="margin-top:28px">
+          <div class="sf-msg" id="schedMsg"></div>
+          <button class="btn-gold" id="saveScheduleBtn">Guardar horário</button>
+        </div>
+      </div>
+
+      <!-- ── Indisponibilidade Excepcional ─── -->
+      <div class="settings-card" style="max-width:720px;margin-top:32px">
+        <h2 style="font-size:1.05rem;font-weight:600;color:var(--text);margin-bottom:6px">Indisponibilidade Excepcional</h2>
+        <p class="sf-hint" style="margin-bottom:20px">Define períodos em que não estás disponível (férias, feriados, etc.). Podes bloquear horas específicas de um dia ou vários dias consecutivos. Os horários bloqueados não aparecem para marcação.</p>
+
+        <!-- Add blockout form -->
+        <form id="blockoutForm" novalidate style="background:var(--cream3);border:1.5px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:24px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 20px">
+            <div class="sf-group" style="margin-bottom:0;grid-column:1/-1">
+              <label for="boLabel">Descrição <span style="font-weight:300;color:var(--text3)">(opcional, ex: Férias)</span></label>
+              <input type="text" id="boLabel" placeholder="ex: Férias de Verão" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.9rem;background:var(--cream);color:var(--text);outline:none;max-width:340px;width:100%">
+            </div>
+            <div class="sf-group" style="margin-bottom:0">
+              <label for="boStartDate">Data de início *</label>
+              <input type="date" id="boStartDate" required style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.9rem;background:var(--cream);color:var(--text);outline:none;width:100%">
+            </div>
+            <div class="sf-group" style="margin-bottom:0">
+              <label for="boEndDate">Data de fim *</label>
+              <input type="date" id="boEndDate" required style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.9rem;background:var(--cream);color:var(--text);outline:none;width:100%">
+            </div>
+            <div class="sf-group" style="margin-bottom:0">
+              <label for="boStartTime">Hora de início <span style="font-weight:300;color:var(--text3)">(vazio = dia inteiro)</span></label>
+              <input type="time" id="boStartTime" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.9rem;background:var(--cream);color:var(--text);outline:none;width:100%">
+            </div>
+            <div class="sf-group" style="margin-bottom:0">
+              <label for="boEndTime">Hora de fim <span style="font-weight:300;color:var(--text3)">(vazio = fim do dia)</span></label>
+              <input type="time" id="boEndTime" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.9rem;background:var(--cream);color:var(--text);outline:none;width:100%">
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;margin-top:16px">
+            <button type="submit" class="btn-gold" id="addBlockoutBtn">+ Adicionar período</button>
+            <span class="sf-msg" id="boMsg"></span>
+          </div>
+        </form>
+
+        <!-- Existing blockouts list -->
+        <div id="blockoutsList">
+          <div style="color:var(--text3);font-size:.88rem">A carregar…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Services tab ─── -->
+    <section class="db-section" id="tab-services">
+      <div class="sec-head">
+        <h1 class="sec-title">Serviços</h1>
+      </div>
+
+      <div class="settings-card" style="max-width:980px">
+        <p class="sf-hint" style="margin-bottom:6px">
+          Define os serviços que os clientes podem escolher ao agendar. <strong>Nome</strong> e <strong>duração</strong> são obrigatórios em cada linha.
+        </p>
+        <p class="sf-hint" style="margin-bottom:24px">
+          Se preencheres <strong>descrição</strong>, <strong>preço</strong> ou <strong>foto</strong> em qualquer serviço, todos os serviços têm de ter esse campo preenchido — garante uma apresentação uniforme no site.
+        </p>
+
+        <!-- Header (desktop) -->
+        <div class="svc-grid-header">
+          <div>Nome *</div>
+          <div>Duração (min) *</div>
+          <div>Descrição</div>
+          <div>Preço</div>
+          <div>Foto (URL)</div>
+          <div></div>
+        </div>
+
+        <div id="servicesList"></div>
+
+        <button type="button" class="btn-outline-sm" id="addServiceBtn" style="margin-top:14px">
+          + Adicionar serviço
+        </button>
+
+        <div class="sf-footer" style="margin-top:28px">
+          <div class="sf-msg" id="servicesMsg"></div>
+          <button type="button" class="btn-gold" id="saveServicesBtn">Guardar serviços</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Google Calendar tab ─── -->
+    <section class="db-section" id="tab-calendar">
+      <div class="sec-head">
+        <h1 class="sec-title">Google Calendar</h1>
+      </div>
+
+      <!-- Step-by-step instructions (collapsible) -->
+      <div class="cal-card-admin" style="margin-bottom:24px;padding:0;overflow:hidden">
+        <button type="button" id="gcalInstrToggle" style="
+          width:100%;
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          padding:18px 22px;
+          background:none;
+          border:none;
+          cursor:pointer;
+          font-family:var(--fb);
+          font-size:.97rem;
+          font-weight:500;
+          color:var(--text);
+          text-align:left;
+          gap:10px;
+        ">
+          <span style="display:flex;align-items:center;gap:10px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            Como ligar o Google Calendar — instruções passo a passo
+          </span>
+          <span id="gcalInstrChevron" style="font-size:1.1rem;color:var(--text3);transition:transform .25s">▸</span>
+        </button>
+
+        <div id="gcalInstrBody" style="display:none;padding:0 22px 24px">
+          <hr style="border:none;border-top:1px solid var(--border);margin:0 0 20px">
+
+          <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:20px;font-size:.9rem;line-height:1.6;color:var(--text)">
+
+            <li>
+              <strong>Acede à Google Cloud Console</strong><br>
+              Abre o link abaixo — faz login com a conta Google onde queres receber os eventos no calendário.<br>
+              <a href="https://console.cloud.google.com/welcome?project=dogwood-dryad-422922-u6" target="_blank" rel="noopener" style="
+                display:inline-flex;align-items:center;gap:6px;
+                margin-top:8px;
+                padding:8px 14px;
+                background:var(--cream3);
+                border:1.5px solid var(--border);
+                border-radius:7px;
+                color:var(--gold);
+                font-weight:500;
+                font-size:.85rem;
+                text-decoration:none;
+              ">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Abrir Google Cloud Console
+              </a>
+            </li>
+
+            <li>
+              <strong>Cria ou seleciona um projeto</strong><br>
+              No topo da página, clica no seletor de projetos (ao lado do logótipo Google Cloud). Se ainda não tiveres nenhum, clica em <em>"Novo projeto"</em>, dá-lhe um nome (ex: <em>SlotBook</em>) e clica em <em>"Criar"</em>.
+            </li>
+
+            <li>
+              <strong>Ativa a Google Calendar API</strong><br>
+              No menu lateral esquerdo vai a <strong>APIs e Serviços → Biblioteca</strong>. Procura por <em>"Google Calendar API"</em>, clica no resultado e depois em <strong>"Ativar"</strong>.
+            </li>
+
+            <li>
+              <strong>Configura o ecrã de consentimento OAuth</strong><br>
+              Vai a <strong>APIs e Serviços → Ecrã de consentimento OAuth</strong>.
+              <ul style="margin-top:8px;padding-left:18px;display:flex;flex-direction:column;gap:4px">
+                <li>Escolhe <strong>"Externo"</strong> e clica em <em>"Criar"</em></li>
+                <li>Preenche o <em>Nome da aplicação</em> (ex: SlotBook) e o <em>Email de suporte</em></li>
+                <li>No final de cada secção clica em <em>"Guardar e continuar"</em> até ao fim</li>
+              </ul>
+            </li>
+
+            <li>
+              <strong>Cria as credenciais OAuth 2.0</strong><br>
+              Vai a <strong>APIs e Serviços → Credenciais</strong>.
+              <ul style="margin-top:8px;padding-left:18px;display:flex;flex-direction:column;gap:4px">
+                <li>Clica em <strong>"+ Criar credenciais"</strong> → <strong>"ID de cliente OAuth"</strong></li>
+                <li>Em <em>Tipo de aplicação</em> escolhe <strong>"Aplicação Web"</strong></li>
+                <li>Em <em>URIs de redirecionamento autorizados</em> clica em <strong>"+ Adicionar URI"</strong> e cola o URI que aparece na caixa abaixo (começa por <code style="background:var(--cream3);padding:1px 5px;border-radius:4px">https://…/api/google/callback</code>)</li>
+                <li>Clica em <strong>"Criar"</strong></li>
+              </ul>
+            </li>
+
+            <li>
+              <strong>Copia o Client ID e o Client Secret</strong><br>
+              Aparece uma janela com o <em>ID do cliente</em> e o <em>Segredo do cliente</em>. Copia cada um e cola nos campos abaixo. Depois clica em <strong>"Guardar credenciais"</strong>.
+            </li>
+
+            <li>
+              <strong>Autoriza o acesso ao calendário</strong><br>
+              Após guardares as credenciais, aparece um botão <em>"Ligar Google Calendar"</em>. Clica nele e segue os passos de autorização na janela Google que abre. No final serás redirecionado de volta para esta página com o calendário ligado.
+            </li>
+
+          </ol>
+        </div>
+      </div>
+
+      <!-- Credentials setup (shown when credentials are not configured) -->
+      <div class="cal-card-admin" id="calCredentialsCard" style="display:none;margin-bottom:24px">
+        <div style="margin-bottom:16px">
+          <div class="cal-status-label" style="margin-bottom:6px">Configurar credenciais Google</div>
+          <div class="cal-status-desc" style="margin-bottom:16px">
+            Para ligar o Google Calendar, primeiro precisas de configurar as credenciais OAuth2 da tua app Google Cloud.
+            <br><br>
+            <strong style="color:var(--text2)">URI de redirecionamento a usar na Google Cloud Console:</strong>
+          </div>
+          <code class="redirect-uri-display" id="redirectUriDisplay" style="
+            display:block;
+            padding:10px 14px;
+            background:var(--cream3);
+            border:1.5px solid var(--border);
+            border-radius:8px;
+            font-size:.82rem;
+            color:var(--text2);
+            margin-bottom:20px;
+            word-break:break-all;
+          ">A carregar…</code>
+        </div>
+        <form id="credentialsForm">
+          <div class="sf-group" style="margin-bottom:16px">
+            <label for="gClientId">Client ID</label>
+            <input type="text" id="gClientId" placeholder="123456789-abc.apps.googleusercontent.com" style="
+              padding:11px 14px;
+              border:1.5px solid var(--border);
+              border-radius:8px;
+              font-family:var(--fb);
+              font-size:.9rem;
+              background:var(--cream);
+              color:var(--text);
+              outline:none;
+              transition:border-color .2s;
+              width:100%;
+            ">
+          </div>
+          <div class="sf-group" style="margin-bottom:20px">
+            <label for="gClientSecret">Client Secret</label>
+            <input type="password" id="gClientSecret" placeholder="GOCSPX-…" style="
+              padding:11px 14px;
+              border:1.5px solid var(--border);
+              border-radius:8px;
+              font-family:var(--fb);
+              font-size:.9rem;
+              background:var(--cream);
+              color:var(--text);
+              outline:none;
+              transition:border-color .2s;
+              width:100%;
+            ">
+          </div>
+          <div style="display:flex;align-items:center;gap:16px">
+            <button type="submit" class="btn-gold" id="saveCredentialsBtn">Guardar credenciais</button>
+            <span class="sf-msg" id="credMsg"></span>
+          </div>
+        </form>
+      </div>
+
+      <!-- Calendar connection status -->
+      <div class="cal-card-admin">
+        <div class="cal-status-row">
+          <div class="cal-status-dot" id="calDot"></div>
+          <div>
+            <div class="cal-status-label" id="calStatusLabel">A verificar…</div>
+            <div class="cal-status-desc" id="calStatusDesc"></div>
+          </div>
+        </div>
+
+        <div class="cal-actions" id="calActions"></div>
+
+        <div class="cal-info-box">
+          <strong>Como funciona:</strong> Ao ligar o Google Calendar, cada nova marcação feita no site será automaticamente adicionada ao teu calendário Google principal, com convite enviado ao cliente.
+        </div>
+      </div>
+
+      <!-- Toast for URL params -->
+      <div class="toast" id="calToast"></div>
+    </section>
+
+    <!-- ── Settings tab ─── -->
+    <section class="db-section" id="tab-settings">
+      <div class="sec-head">
+        <h1 class="sec-title">Configurações</h1>
+      </div>
+
+      <div class="settings-card">
+        <form id="settingsForm" novalidate>
+
+          <!-- Booking settings -->
+          <div class="sf-group">
+            <label for="sBusinessName">Nome do negócio</label>
+            <p class="sf-hint">Aparece nos emails enviados aos clientes e no convite de calendário.</p>
+            <input type="text" id="sBusinessName" placeholder="ex: Clínica Exemplo" style="padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.95rem;background:var(--cream);color:var(--text);outline:none;transition:border-color .2s;max-width:360px;">
+          </div>
+
+          <div class="sf-group">
+            <label for="sBusinessPhone">Telefone / Contacto</label>
+            <p class="sf-hint">Apresentado na página pública e incluído nos eventos do Google Calendar.</p>
+            <input type="tel" id="sBusinessPhone" placeholder="ex: +351 210 000 000" style="padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.95rem;background:var(--cream);color:var(--text);outline:none;transition:border-color .2s;max-width:360px;">
+          </div>
+
+          <div class="sf-group">
+            <label for="sBusinessEmail">Email do negócio</label>
+            <p class="sf-hint">Apresentado na página pública e incluído nos eventos do Google Calendar.</p>
+            <input type="email" id="sBusinessEmail" placeholder="ex: geral@exemplo.com" style="padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.95rem;background:var(--cream);color:var(--text);outline:none;transition:border-color .2s;max-width:360px;">
+          </div>
+
+          <div class="sf-group">
+            <p class="sf-label">Sistema de agendamentos</p>
+            <label class="sf-check">
+              <input type="checkbox" id="sBookingEnabled" checked>
+              <span>Agendamentos online activos</span>
+            </label>
+            <p class="sf-hint">Ao desactivar, toda a secção de marcações desaparece da página pública (calendário, horários, botão de reserva). O backoffice continua a funcionar normalmente.</p>
+          </div>
+
+          <div class="sf-group">
+            <label for="sSlotStep">Intervalo entre vagas (min)</label>
+            <p class="sf-hint">Espaçamento entre vagas apresentadas ao cliente. Recomendado: <strong>20 min</strong>. Após uma marcação, a próxima vaga surge exactamente quando ela termina e as seguintes avançam neste intervalo.</p>
+            <input type="number" id="sSlotStep" min="5" max="120" step="5" placeholder="20" style="padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.95rem;background:var(--cream);color:var(--text);outline:none;transition:border-color .2s;width:120px;">
+          </div>
+
+          <div class="sf-group">
+            <label for="sAddress">Morada / Local das marcações</label>
+            <p class="sf-hint">Endereço físico onde decorrem as marcações. Ao definir uma morada, as marcações serão adicionadas ao Google Calendar com este local em vez de uma videochamada Google Meet.</p>
+            <input type="text" id="sAddress" placeholder="ex: Rua Exemplo 123, 1000-001 Lisboa" style="padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.95rem;background:var(--cream);color:var(--text);outline:none;transition:border-color .2s;max-width:480px;">
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--border);margin:8px 0 4px">
+
+          <div class="sf-group" style="margin-bottom:8px">
+            <label>Redes Sociais</label>
+            <p class="sf-hint">Os links preenchidos aparecem automaticamente na página pública com o ícone da rede. Deixa em branco as que não usas.</p>
+          </div>
+
+          <div class="sf-group">
+            <label for="sSocialFacebook" style="display:flex;align-items:center;gap:6px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color:#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              Facebook
+            </label>
+            <input type="url" id="sSocialFacebook" placeholder="https://facebook.com/a-tua-pagina" style="padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.9rem;background:var(--cream);color:var(--text);outline:none;transition:border-color .2s;max-width:480px;">
+          </div>
+
+          <div class="sf-group">
+            <label for="sSocialInstagram" style="display:flex;align-items:center;gap:6px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color:#E1306C"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+              Instagram
+            </label>
+            <input type="url" id="sSocialInstagram" placeholder="https://instagram.com/a-tua-conta" style="padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.9rem;background:var(--cream);color:var(--text);outline:none;transition:border-color .2s;max-width:480px;">
+          </div>
+
+          <div class="sf-group">
+            <label for="sSocialYoutube" style="display:flex;align-items:center;gap:6px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color:#FF0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              YouTube
+            </label>
+            <input type="url" id="sSocialYoutube" placeholder="https://youtube.com/@o-teu-canal" style="padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.9rem;background:var(--cream);color:var(--text);outline:none;transition:border-color .2s;max-width:480px;">
+          </div>
+
+          <div class="sf-group">
+            <label for="sSocialX" style="display:flex;align-items:center;gap:6px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="color:#000"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              X (Twitter)
+            </label>
+            <input type="url" id="sSocialX" placeholder="https://x.com/a-tua-conta" style="padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.9rem;background:var(--cream);color:var(--text);outline:none;transition:border-color .2s;max-width:480px;">
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--border);margin:8px 0 4px">
+
+          <div class="sf-group">
+            <label for="sEmail">Email para receber alertas</label>
+            <p class="sf-hint">Todos os alertas de novas marcações serão enviados para este endereço.</p>
+            <input type="email" id="sEmail" placeholder="email@exemplo.com">
+          </div>
+
+          <div class="sf-group">
+            <p class="sf-label">Quando notificar</p>
+            <label class="sf-check">
+              <input type="checkbox" id="sNotifyBookings">
+              <span>Nova marcação recebida</span>
+            </label>
+            <label class="sf-check">
+              <input type="checkbox" id="sNotifyContact">
+              <span>Novo pedido de contacto / plano</span>
+            </label>
+          </div>
+
+          <!-- Advanced settings -->
+          <div class="adv-settings">
+            <button type="button" class="adv-toggle" id="advToggle">
+              ⚙ Definições avançadas
+              <span class="adv-chevron" id="advChevron">▸</span>
+            </button>
+            <div class="adv-body" id="advBody" style="display:none">
+              <div class="adv-warn">
+                ⚠ Estas definições afetam o envio de emails. Não alteres sem saberes o que estás a fazer.
+              </div>
+              <div class="sf-group">
+                <label for="sResendKey">Chave API Resend <span style="font-weight:300;color:var(--text3)">(email)</span></label>
+                <p class="sf-hint">Necessária para enviar emails de confirmação. Obtém a tua chave em <strong>resend.com</strong>.</p>
+                <input type="password" id="sResendKey" placeholder="re_…" autocomplete="off">
+                <p class="sf-hint" id="sResendKeyStatus" style="margin-top:4px"></p>
+              </div>
+
+              <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+
+              <div class="sf-group" style="margin-bottom:0">
+                <label style="color:#c0392b">Reset completo</label>
+                <p class="sf-hint">Apaga todos os dados (conta, configurações, marcações, horário e ligação Google Calendar). Terás de voltar a fazer o setup em <strong>/admin/setup</strong>. Esta ação é irreversível.</p>
+                <button type="button" class="btn-danger" id="resetSetupBtn" style="margin-top:8px">Apagar tudo e reiniciar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sf-footer">
+            <div class="sf-msg" id="sfMsg"></div>
+            <button type="submit" class="btn-gold" id="saveSettingsBtn">Guardar alterações</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ── Account tab ─── -->
+    <section class="db-section" id="tab-account">
+      <div class="sec-head">
+        <h1 class="sec-title">Conta</h1>
+      </div>
+
+      <div class="settings-card">
+        <form id="pwdForm" novalidate>
+          <div style="margin-bottom:20px">
+            <div class="cal-status-label" style="margin-bottom:4px">Alterar password</div>
+            <div class="cal-status-desc">Para segurança, introduz a tua password atual antes de definir uma nova.</div>
+          </div>
+
+          <div class="sf-group">
+            <label for="pwdCurrent">Password atual</label>
+            <input type="password" id="pwdCurrent" placeholder="••••••••" autocomplete="current-password" style="
+              padding:11px 14px;
+              border:1.5px solid var(--border);
+              border-radius:8px;
+              font-family:var(--fb);
+              font-size:.95rem;
+              background:var(--cream);
+              color:var(--text);
+              outline:none;
+              transition:border-color .2s;
+              max-width:360px;
+            ">
+          </div>
+          <div class="sf-group">
+            <label for="pwdNew">Nova password</label>
+            <input type="password" id="pwdNew" placeholder="Mínimo 8 caracteres" autocomplete="new-password" style="
+              padding:11px 14px;
+              border:1.5px solid var(--border);
+              border-radius:8px;
+              font-family:var(--fb);
+              font-size:.95rem;
+              background:var(--cream);
+              color:var(--text);
+              outline:none;
+              transition:border-color .2s;
+              max-width:360px;
+            ">
+          </div>
+          <div class="sf-group">
+            <label for="pwdNew2">Confirmar nova password</label>
+            <input type="password" id="pwdNew2" placeholder="Repete a nova password" autocomplete="new-password" style="
+              padding:11px 14px;
+              border:1.5px solid var(--border);
+              border-radius:8px;
+              font-family:var(--fb);
+              font-size:.95rem;
+              background:var(--cream);
+              color:var(--text);
+              outline:none;
+              transition:border-color .2s;
+              max-width:360px;
+            ">
+          </div>
+
+          <div class="sf-footer">
+            <div class="sf-msg" id="pwdMsg"></div>
+            <button type="submit" class="btn-gold" id="savePwdBtn">Alterar password</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Edit booking modal -->
+  <div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center">
+    <div style="background:var(--surface);border-radius:14px;padding:32px;width:340px;max-width:90vw;box-shadow:0 12px 40px rgba(0,0,0,.3)">
+      <h3 style="margin:0 0 20px;font-size:1.05rem;color:var(--text1)">Editar Marcação</h3>
+      <input type="hidden" id="editId">
+      <div class="af-group">
+        <label for="editDate">Data</label>
+        <input type="date" id="editDate">
+      </div>
+      <div class="af-group">
+        <label for="editTime">Hora</label>
+        <input type="time" id="editTime" step="900">
+      </div>
+      <div id="editErr" style="color:#c0392b;font-size:.82rem;margin-bottom:12px;display:none"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+        <button type="button" class="btn-outline" id="editCancelBtn">Cancelar</button>
+        <button type="button" class="btn-gold" id="editSaveBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>

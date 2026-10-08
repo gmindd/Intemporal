@@ -1,0 +1,11 @@
+{
+  "name": "slotbook-template-basic",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@vercel/kv": "^3.0.0",
+    "googleapis": "^144.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "resend": "^4.0.0"
+  }
+}
