@@ -1,4 +1,5 @@
 const { kv } = require('../lib/kv');
+const SlotLogic = require('../assets/js/slots.js');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -9,38 +10,23 @@ module.exports = async function handler(req, res) {
 
   const { resource, date } = req.query;
 
-  // ── Occupied slots for a given date (3 reads → 1 pipeline) ──
+  // ── Occupied time on a given date (3 reads → 1 pipeline) ──
+  // Ranges are in minutes from midnight; the browser builds the slots with SlotLogic.
   if (resource === 'slots') {
-    if (!date) return res.status(400).json({ error: 'date required' });
-    const parts   = date.split('/');
-    const dateISO = parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : date;
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(date || '')) return res.status(400).json({ error: 'date required (DD/MM/YYYY)' });
 
     const pipe = kv.pipeline();
     pipe.get('settings');
-    pipe.lrange('bookings', 0, 999);
+    pipe.lrange('bookings', 0, 1999);
     pipe.get('blockouts');
-    const [settings, raw, blockoutsRaw] = await pipe.exec();
+    const [settings, raw, blockouts] = await pipe.exec();
 
-    const defaultDur  = (settings || {}).duration || 30;
-    const timeToMin   = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-    const dayBookings = (raw || [])
-      .map(b => (typeof b === 'string' ? JSON.parse(b) : b))
-      .filter(b => b.date === date);
+    const bookings = (raw || []).map(b => (typeof b === 'string' ? JSON.parse(b) : b));
+    const bookedSegments = SlotLogic.bookedSegmentsFor(bookings, date, (settings || {}).duration || 30)
+      .map(({ start, end }) => ({ start, end, kind: 'booked' }));
+    const blockedRanges = SlotLogic.blockedRangesFor(SlotLogic.ptToISO(date), blockouts);
 
-    const occupied      = dayBookings.map(b => b.time);
-    const bookedSegments = dayBookings.map(b => ({
-      start: timeToMin(b.time),
-      end:   timeToMin(b.time) + (b.serviceDuration || defaultDur),
-    }));
-
-    const blockedRanges = (blockoutsRaw || [])
-      .filter(b => dateISO >= b.startDate && dateISO <= b.endDate)
-      .map(b => ({
-        startTime: dateISO === b.startDate ? (b.startTime || '00:00') : '00:00',
-        endTime:   dateISO === b.endDate   ? (b.endTime   || '24:00') : '24:00',
-      }));
-
-    return res.status(200).json({ occupied, bookedSegments, blockedRanges });
+    return res.status(200).json({ bookedSegments, blockedRanges, now: SlotLogic.lisbonNow() });
   }
 
   // ── Public settings (2 reads → 1 pipeline) ────────────────

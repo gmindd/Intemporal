@@ -1136,6 +1136,7 @@
     </div>
   </footer>
 
+  <script src="/assets/js/slots.js"></script>
   <script>
     /* ── Identificação legal (DL 7/2004, art. 10.º) ────────
        Preencher com os dados oficiais da empresa/empresário. */
@@ -1229,65 +1230,32 @@
           if (pub?.slotStep) step = pub.slotStep;
         }
 
-        const ORDER = ['sun','mon','tue','wed','thu','fri','sat'];
         const DAY_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+        const defaultDur = 30;
+        const base = new Date(); base.setHours(0, 0, 0, 0);
 
-        function generateSlotsChained(day, step, bookedSegs) {
-          const segs = (bookedSegs || []).slice().sort((a, b) => a.start - b.start);
-          const out = [];
-          [[day.start1, day.end1], [day.start2, day.end2]].forEach(([s, e]) => {
-            if (!s || !e) return;
-            const [sh, sm] = s.split(':').map(Number);
-            const [eh, em] = e.split(':').map(Number);
-            let cur = sh * 60 + sm;
-            const endMin = eh * 60 + em;
-            let guard = 0;
-            while (cur < endMin && guard++ < 1000) {
-              const blocking = segs.find(seg => seg.start <= cur && seg.end > cur);
-              if (blocking) { cur = blocking.end; }
-              else { out.push(`${pad(Math.floor(cur/60))}:${pad(cur%60)}`); cur += step; }
-            }
-          });
-          return out;
-        }
-        const now = new Date();
-        const todayIdx = now.getDay();
-        const nowMin = now.getHours() * 60 + now.getMinutes();
-
-        // Fetch today's occupied slots to exclude from badge
-        let todayBookedSegs = [], todayBlockedRanges = [];
-        try {
-          const td = now;
-          const tStr = `${String(td.getDate()).padStart(2,'0')}/${String(td.getMonth()+1).padStart(2,'0')}/${td.getFullYear()}`;
-          const sr = await fetch(`/api/slots?date=${encodeURIComponent(tStr)}`);
-          if (sr.ok) { const j = await sr.json(); todayBookedSegs = j.bookedSegments||[]; todayBlockedRanges = j.blockedRanges||[]; }
-        } catch {}
-
+        // Walk forward day by day (usually 1–2 requests) until a free slot shows up
         for (let offset = 0; offset < 14; offset++) {
-          const dayIdx = (todayIdx + offset) % 7;
-          const dayKey = ORDER[dayIdx];
-          const d = sched[dayKey];
-          if (!d || !d.active) continue;
+          const d = new Date(base); d.setDate(base.getDate() + offset);
+          const day = sched[SlotLogic.DAY_KEYS[d.getDay()]];
+          if (!SlotLogic.periodsFor(day).length) continue;
+          const datePt = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 
-          // Generate slots for this day using chaining algorithm
-          const segsForDay = offset === 0 ? todayBookedSegs : [];
-          const slots = generateSlotsChained(d, step, segsForDay);
+          let occ = { bookedSegments: [], blockedRanges: [], now: null };
+          try {
+            const sr = await fetch(`/api/slots?date=${encodeURIComponent(datePt)}`);
+            if (sr.ok) occ = await sr.json();
+          } catch {}
 
-          let available = slots;
-          if (offset === 0) {
-            const tMin2 = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-            available = slots.filter(t => {
-              const tS = tMin2(t);
-              if (tS <= nowMin) return false;
-              if (todayBlockedRanges.some(r => t >= (r.startTime||'00:00') && t < (r.endTime||'24:00'))) return false;
-              return true;
-            });
-          }
+          const free = SlotLogic.generateDaySlots({
+            day, step, duration: defaultDur,
+            booked: occ.bookedSegments, blocked: occ.blockedRanges,
+            notBeforeMin: occ.now && occ.now.datePt === datePt ? occ.now.min : null,
+          }).find(sl => sl.available);
+          if (!free) continue;
 
-          if (!available.length) continue;
-
-          const label = offset === 0 ? 'Hoje' : offset === 1 ? 'Amanhã' : DAY_SHORT[dayIdx];
-          document.getElementById('nextSlotBadge').textContent = `${label}, ${available[0]}`;
+          const label = offset === 0 ? 'Hoje' : offset === 1 ? 'Amanhã' : DAY_SHORT[d.getDay()];
+          document.getElementById('nextSlotBadge').textContent = `${label}, ${free.time}`;
           return;
         }
         document.getElementById('nextSlotBadge').textContent = 'Sem vagas próximas';
@@ -1658,54 +1626,39 @@
         if (!schedule) throw new Error();
         const day = schedule[dayKey];
 
-        if (!day || !day.active) {
+        if (!SlotLogic.periodsFor(day).length) {
           slotsEl.innerHTML = '';
           hintEl.textContent = 'Não há marcações disponíveis neste dia.';
           return;
         }
 
-        // Fetch bookings/blocked ranges first so slot generation can chain around them
-        let bookedSegments = [], blockedRanges = [];
-        try {
-          const [y2, mo2, d2] = val.split('-');
-          const datePtQ = `${d2}/${mo2}/${y2}`;
-          const slotsRes = await fetch(`/api/slots?date=${encodeURIComponent(datePtQ)}&duration=${appointmentDuration}`);
-          if (slotsRes.ok) ({ bookedSegments, blockedRanges } = await slotsRes.json());
-        } catch {}
+        // Occupied time (bookings + blockouts) and the shop's current time (Lisbon)
+        const [y2, mo2, d2] = val.split('-');
+        const datePt = `${d2}/${mo2}/${y2}`;
+        const slotsRes = await fetch(`/api/slots?date=${encodeURIComponent(datePt)}`);
+        if (!slotsRes.ok) throw new Error();
+        const occ = await slotsRes.json();
 
-        const slots = generateSlots(day, slotStep, bookedSegments);
+        const slots = SlotLogic.generateDaySlots({
+          day, step: slotStep, duration: appointmentDuration,
+          booked: occ.bookedSegments, blocked: occ.blockedRanges,
+          notBeforeMin: occ.now && occ.now.datePt === datePt ? occ.now.min : null,
+        });
         if (!slots.length) {
           slotsEl.innerHTML = '';
-          hintEl.textContent = 'Não há horários configurados para este dia.';
+          hintEl.textContent = 'Não há horários livres neste dia.';
           return;
         }
 
-        // Mark past slots as disabled when selected date is today
-        const selectedDate = new Date(val + 'T00:00:00');
-        const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0);
-        const isToday = selectedDate.getTime() === todayMidnight.getTime();
-        const nowMin  = new Date().getHours() * 60 + new Date().getMinutes();
-
+        const REASONS = { past: 'Horário já passou', blocked: 'Indisponível', booked: 'Horário ocupado' };
         slotsEl.innerHTML = '';
-        slots.forEach(t => {
-          const [th, tm] = t.split(':').map(Number);
-          const tMin = th * 60 + tm;
-          const tEnd = tMin + appointmentDuration;
-          // booked check is belt-and-suspenders: chaining should already exclude these,
-          // but if bookedSegments was empty during generation this catches them
-          const isBooked  = bookedSegments.some(seg => seg.start < tEnd && seg.end > tMin);
-          const isBlocked = blockedRanges.some(r => t >= (r.startTime || '00:00') && t < (r.endTime || '24:00'));
-          const isPast    = isToday && tMin <= nowMin;
-          const disabled  = isPast || isBlocked || isBooked;
-
+        slots.forEach(({ time: t, available, reason }) => {
           const btn = document.createElement('button');
           btn.type = 'button';
-          btn.className = 'time-slot' + (disabled ? ' disabled' : '');
+          btn.className = 'time-slot' + (available ? '' : ' disabled');
           btn.textContent = t;
-          if (isPast)    btn.title = 'Horário já passou';
-          if (isBlocked) btn.title = 'Indisponível';
-          if (isBooked)  btn.title = 'Horário ocupado';
-          if (!disabled) {
+          if (reason) btn.title = REASONS[reason];
+          if (available) {
             btn.addEventListener('click', () => {
               document.querySelectorAll('.time-slot').forEach(b => b.classList.remove('selected'));
               btn.classList.add('selected');
@@ -1724,32 +1677,6 @@
         slotsEl.innerHTML = '';
         hintEl.textContent = 'Não foi possível carregar os horários. Tente novamente.';
       }
-    }
-
-    // step  = admin-configured slot interval (slotStep), independent of service duration
-    // block = position falls inside an existing booking [seg.start, seg.end)
-    // on block: jump to booking end, resume with step from there
-    function generateSlots(day, step, bookedSegs) {
-      const segs = (bookedSegs || []).slice().sort((a, b) => a.start - b.start);
-      const slots = [];
-      [[day.start1, day.end1], [day.start2, day.end2]].forEach(([start, end]) => {
-        if (!start || !end) return;
-        const [sh, sm] = start.split(':').map(Number);
-        const [eh, em] = end.split(':').map(Number);
-        let cur = sh * 60 + sm;
-        const endMin = eh * 60 + em;
-        let guard = 0;
-        while (cur < endMin && guard++ < 1000) {
-          const blocking = segs.find(seg => seg.start <= cur && seg.end > cur);
-          if (blocking) {
-            cur = blocking.end;
-          } else {
-            slots.push(`${pad(Math.floor(cur / 60))}:${pad(cur % 60)}`);
-            cur += step;
-          }
-        }
-      });
-      return slots;
     }
 
     /* ── Booking form ────────────────────────────────── */

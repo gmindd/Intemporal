@@ -39,6 +39,7 @@ module.exports = async function handler(req, res) {
       duration:    parseInt(s.duration, 10),
       description: s.description?.trim() || '',
       price:       s.price?.trim() || '',
+      color:       /^#[0-9a-f]{6}$/i.test(s.color || '') ? s.color.toLowerCase() : '',
     }));
 
     await kv.set('services', clean);

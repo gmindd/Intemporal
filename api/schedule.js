@@ -3,15 +3,7 @@ const { kv } = require('../lib/kv');
 
 const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
-const DEFAULTS = {
-  mon: { active: true,  start1: '09:00', end1: '13:00', start2: '14:00', end2: '18:00' },
-  tue: { active: true,  start1: '09:00', end1: '13:00', start2: '14:00', end2: '18:00' },
-  wed: { active: true,  start1: '09:00', end1: '13:00', start2: '14:00', end2: '18:00' },
-  thu: { active: true,  start1: '09:00', end1: '13:00', start2: '14:00', end2: '18:00' },
-  fri: { active: true,  start1: '09:00', end1: '13:00', start2: '14:00', end2: '18:00' },
-  sat: { active: false, start1: '',      end1: '',      start2: '',      end2: '' },
-  sun: { active: false, start1: '',      end1: '',      start2: '',      end2: '' },
-};
+const { DEFAULT_SCHEDULE: DEFAULTS } = require('../assets/js/slots.js');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

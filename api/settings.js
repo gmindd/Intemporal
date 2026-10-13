@@ -28,6 +28,7 @@ module.exports = async function handler(req, res) {
         socialX:           stored.socialX           ?? '',
         waTplToday:        stored.waTplToday        ?? '',
         waTplNext:         stored.waTplNext         ?? '',
+        waTplChange:       stored.waTplChange       ?? '',
       },
     });
   }
@@ -42,7 +43,7 @@ module.exports = async function handler(req, res) {
       'notificationEmail', 'address', 'businessName', 'serviceName',
       'businessPhone', 'businessEmail',
       'socialFacebook', 'socialInstagram', 'socialYoutube', 'socialX',
-      'waTplToday', 'waTplNext',
+      'waTplToday', 'waTplNext', 'waTplChange',
     ];
     for (const f of STRING_FIELDS) {
       if (typeof b[f] === 'string') settings[f] = b[f].trim();

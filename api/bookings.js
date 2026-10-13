@@ -1,7 +1,8 @@
 const { requireAdmin } = require('../lib/auth');
-const { getAuthorizedClient, createCalendarEvent } = require('../lib/google');
+const { getAuthorizedClient, createCalendarEvent, updateCalendarEventTime, deleteCalendarEvent } = require('../lib/google');
 const { kv } = require('../lib/kv');
 const { Resend } = require('resend');
+const SlotLogic = require('../assets/js/slots.js');
 
 // Sender address: must belong to a domain verified in your Resend account
 const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@slotbook.cc';
@@ -87,387 +88,472 @@ function outlookCalendarUrl(title, startLocal, endLocal, description, location) 
   return url;
 }
 
+
+/* ── Storage ──────────────────────────────────────────────
+   Bookings live in one KV list, newest first. Past bookings older
+   than the retention period are dropped whenever the list is rewritten
+   (the privacy policy promises a maximum of 12 months). */
+const MAX_BOOKINGS   = 2000;
+const RETENTION_DAYS = 365;
+
+const parseList = raw => (raw || []).map(b => (typeof b === 'string' ? JSON.parse(b) : b));
+
+async function readBookings() {
+  return parseList(await kv.lrange('bookings', 0, MAX_BOOKINGS - 1));
+}
+
+async function writeBookings(bookings) {
+  const cutoff = new Date(Date.now() - RETENTION_DAYS * 86400000).toISOString().slice(0, 10);
+  const kept = bookings.filter(b => SlotLogic.ptToISO(b.date) >= cutoff).slice(0, MAX_BOOKINGS);
+  const pipe = kv.pipeline();
+  pipe.del('bookings');
+  // lpush puts its last argument at the head → pass oldest first so the newest stays at index 0
+  if (kept.length) pipe.lpush('bookings', ...kept.slice().reverse().map(b => JSON.stringify(b)));
+  await pipe.exec();
+}
+
+/* ── Helpers ──────────────────────────────────────────── */
+// Escape user-provided text before putting it in email HTML
+const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clean = (v, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+const isEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+const isDatePt = v => /^\d{2}\/\d{2}\/\d{4}$/.test(v || '');
+const isTime = v => /^\d{2}:\d{2}$/.test(v || '');
+
+function findConflict(bookings, { date, time, duration, defaultDur, excludeId }) {
+  const start = SlotLogic.toMin(time);
+  const end   = start + duration;
+  const seg = SlotLogic.bookedSegmentsFor(bookings, date, defaultDur, excludeId)
+    .find(s => s.start < end && s.end > start);
+  return seg ? bookings.find(b => b.id === seg.id) : null;
+}
+
+function resolveService(services, serviceId, settings) {
+  const svc = (services || []).find(s => s.id === serviceId);
+  if (svc) {
+    return { id: svc.id, label: svc.name, duration: Number(svc.duration) || 30, description: svc.description || '', price: svc.price || '' };
+  }
+  const duration = Number(settings.duration) || 30;
+  return { id: '', label: settings.serviceName || `Marcação · ${duration} min`, duration, description: '', price: '' };
+}
+
+function businessInfo(settings) {
+  return {
+    businessName:  settings.businessName  || 'Intemporal Barbearia',
+    address:       settings.address       || '',
+    businessPhone: settings.businessPhone || '',
+    businessEmail: settings.businessEmail || '',
+  };
+}
+
+const emailFooter = `
+  <hr style="border:none;border-top:1px solid #eee;margin:28px 0 10px">
+  <p style="font-size:.72rem;color:#bbb;text-align:center;margin:0">
+    Serviço prestado por <a href="https://www.slotbook.cc" style="color:#B30000;text-decoration:none">SlotBook</a>
+  </p>`;
+
+function calendarButtons(googleUrl, outlookUrl) {
+  return `
+    <div style="margin-top:24px;padding:16px;background:#f9f5ee;border-radius:8px">
+      <p style="margin:0 0 12px;color:#666;font-size:.88rem">Adiciona ao teu calendário:</p>
+      <a href="${googleUrl}" style="display:inline-block;margin-right:8px;margin-bottom:8px;padding:9px 16px;background:#4285F4;color:#fff;text-decoration:none;border-radius:6px;font-size:.85rem;font-weight:500">📅 Google Calendar</a>
+      <a href="${outlookUrl}" style="display:inline-block;margin-bottom:8px;padding:9px 16px;background:#0078D4;color:#fff;text-decoration:none;border-radius:6px;font-size:.85rem;font-weight:500">📅 Outlook</a>
+      <p style="margin:8px 0 0;color:#999;font-size:.78rem">O ficheiro <strong>convite.ics</strong> em anexo também funciona em qualquer aplicação de calendário (iOS, Android, etc.).</p>
+    </div>`;
+}
+
+function locationBlock(address, label = 'Local do encontro') {
+  if (!address) return '';
+  return `<div style="margin-top:16px;padding:14px 18px;background:#f9f5ee;border-radius:8px;border-left:3px solid #B30000">
+      <p style="margin:0;font-size:.88rem;color:#666">📍 <strong style="color:#333">${label}:</strong></p>
+      <p style="margin:6px 0 0;font-weight:600;color:#1A1612">${h(address)}</p>
+    </div>`;
+}
+
+function calendarAttachment({ booking, settings, info, uidSuffix = '' }) {
+  const startLocal = toLocalISO(booking.date, booking.time);
+  const endLocal   = addMinutes(startLocal, booking.serviceDuration);
+  const title = `${booking.name} — ${booking.service || info.businessName}`;
+  const desc = [
+    `Serviço: ${booking.service}`,
+    booking.email ? `Email: ${booking.email}` : null,
+    booking.phone ? `Telemóvel: ${booking.phone}` : null,
+    info.address ? `Local: ${info.address}` : null,
+    booking.message ? `\n${booking.message}` : null,
+  ].filter(Boolean).join('\n');
+
+  const ics = generateICS({
+    uid:            `booking-${booking.id}${uidSuffix}@${info.businessName.toLowerCase().replace(/\s+/g, '-')}.app`,
+    title, description: desc, location: info.address || null, startLocal, endLocal,
+    organizerName:  info.businessName,
+    organizerEmail: settings.notificationEmail || EMAIL_FROM,
+    attendeeName:   booking.name,
+    attendeeEmail:  booking.email,
+  });
+  return {
+    attachment: { filename: 'convite.ics', content: Buffer.from(ics).toString('base64'), contentType: 'text/calendar; charset=utf-8; method=REQUEST' },
+    googleUrl:  googleCalendarUrl(title, startLocal, endLocal, desc, info.address || null),
+    outlookUrl: outlookCalendarUrl(title, startLocal, endLocal, desc, info.address || null),
+  };
+}
+
+function getResend(settings) {
+  const key = process.env.RESEND_API_KEY || settings.resendApiKey || '';
+  return key ? new Resend(key) : null;
+}
+
+/* ── Google Calendar ──────────────────────────────────── */
+async function createGoogleEvent({ settings, adminConfig, booking, svc }) {
+  try {
+    const auth = await getAuthorizedClient();
+    if (!auth) return null;
+    const info = businessInfo(settings);
+    const adminEmail = settings.notificationEmail || (adminConfig || {}).email;
+    const attendees = [];
+    if (booking.email) attendees.push({ email: booking.email });
+    if (adminEmail && adminEmail !== booking.email) attendees.push({ email: adminEmail });
+    const mapsLink = info.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(info.address)}` : '';
+    const startLocal = toLocalISO(booking.date, booking.time);
+
+    const event = await createCalendarEvent(auth, {
+      title: `${booking.name} — ${booking.service}`,
+      description: [
+        `Cliente: ${booking.name}`,
+        `Email: ${booking.email || '—'}`,
+        `Telemóvel: ${booking.phone || '—'}`,
+        '',
+        `Serviço: ${booking.service}`,
+        svc.description ? `Descrição: ${svc.description}` : null,
+        svc.price ? `Preço: ${svc.price}` : null,
+        booking.message ? `\nNotas: ${booking.message}` : null,
+        '',
+        '─────────────────',
+        info.address ? `📍 ${info.address}` : null,
+        mapsLink ? `🗺 ${mapsLink}` : null,
+        info.businessPhone ? `📞 ${info.businessPhone}` : null,
+        info.businessEmail ? `✉ ${info.businessEmail}` : null,
+      ].filter(l => l !== null).join('\n').trim(),
+      startLocal,
+      endLocal: addMinutes(startLocal, booking.serviceDuration),
+      attendees,
+      location: info.address || null,
+      noMeet: true,
+    });
+    return event?.id || null;
+  } catch (err) {
+    console.error('[bookings] Google Calendar erro:', err.message, err.code || '');
+    return null;
+  }
+}
+
+async function moveGoogleEvent(booking, notify) {
+  if (!booking.googleEventId) return;
+  try {
+    const auth = await getAuthorizedClient();
+    if (!auth) return;
+    const startLocal = toLocalISO(booking.date, booking.time);
+    await updateCalendarEventTime(auth, booking.googleEventId, {
+      startLocal, endLocal: addMinutes(startLocal, booking.serviceDuration), notify,
+    });
+  } catch (err) {
+    console.error('[bookings] Google Calendar (mover) erro:', err.message);
+  }
+}
+
+async function removeGoogleEvent(booking) {
+  if (!booking.googleEventId) return;
+  try {
+    const auth = await getAuthorizedClient();
+    if (auth) await deleteCalendarEvent(auth, booking.googleEventId);
+  } catch (err) {
+    console.error('[bookings] Google Calendar (apagar) erro:', err.message);
+  }
+}
+
+/* ── Emails ───────────────────────────────────────────── */
+async function sendAdminNotification({ settings, adminConfig, booking, svc }) {
+  const resend = getResend(settings);
+  const to = settings.notificationEmail || (adminConfig || {}).email;
+  if (!resend || !to || settings.notifyBookings === false) return;
+  const info = businessInfo(settings);
+  try {
+    await resend.emails.send({
+      from:    `${info.businessName} <${EMAIL_FROM}>`,
+      to,
+      subject: `📅 Nova marcação: ${booking.name} — ${booking.date} às ${booking.time}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px">
+          <h2 style="color:#B30000">Nova Marcação</h2>
+          <table style="border-collapse:collapse;width:100%">
+            <tr><td style="padding:4px 8px;color:#888">Nome</td><td style="padding:4px 8px"><strong>${h(booking.name)}</strong></td></tr>
+            <tr><td style="padding:4px 8px;color:#888">Email</td><td style="padding:4px 8px">${h(booking.email || '—')}</td></tr>
+            <tr><td style="padding:4px 8px;color:#888">Telemóvel</td><td style="padding:4px 8px">${h(booking.phone || '—')}</td></tr>
+            <tr><td style="padding:4px 8px;color:#888">Data</td><td style="padding:4px 8px"><strong>${h(booking.date)} às ${h(booking.time)}</strong></td></tr>
+            <tr><td style="padding:4px 8px;color:#888">Serviço</td><td style="padding:4px 8px"><strong>${h(booking.service)}</strong></td></tr>
+            <tr><td style="padding:4px 8px;color:#888">Duração</td><td style="padding:4px 8px">${booking.serviceDuration} min</td></tr>
+            ${svc.price ? `<tr><td style="padding:4px 8px;color:#888">Preço</td><td style="padding:4px 8px"><strong>${h(svc.price)}</strong></td></tr>` : ''}
+            ${booking.message ? `<tr><td style="padding:4px 8px;color:#888;vertical-align:top">Mensagem</td><td style="padding:4px 8px">${h(booking.message)}</td></tr>` : ''}
+          </table>
+          ${emailFooter}
+        </div>`,
+    });
+  } catch (err) {
+    console.error('[Email admin]', err.message);
+  }
+}
+
+async function sendClientConfirmation({ settings, booking, svc }) {
+  const resend = getResend(settings);
+  if (!resend || !booking.email) return false;
+  const info = businessInfo(settings);
+  const { attachment, googleUrl, outlookUrl } = calendarAttachment({ booking, settings, info });
+  try {
+    await resend.emails.send({
+      from:    `${info.businessName} <${EMAIL_FROM}>`,
+      to:      booking.email,
+      subject: `Marcação confirmada — ${booking.date} às ${booking.time}`,
+      attachments: [attachment],
+      html: `
+        <div style="font-family:sans-serif;max-width:480px">
+          <h2 style="color:#B30000">Marcação Confirmada!</h2>
+          <p>Olá <strong>${h(booking.name)}</strong>,</p>
+          <p>A tua marcação foi confirmada para <strong>${h(booking.date)} às ${h(booking.time)}</strong>.</p>
+          <table style="border-collapse:collapse;width:100%;margin-top:12px">
+            <tr><td style="padding:4px 8px;color:#888">Serviço</td><td style="padding:4px 8px"><strong>${h(booking.service)}</strong></td></tr>
+            <tr><td style="padding:4px 8px;color:#888">Duração</td><td style="padding:4px 8px">${booking.serviceDuration} min</td></tr>
+            ${svc.description ? `<tr><td style="padding:4px 8px;color:#888">Descrição</td><td style="padding:4px 8px">${h(svc.description)}</td></tr>` : ''}
+            ${svc.price ? `<tr><td style="padding:4px 8px;color:#888">Preço</td><td style="padding:4px 8px"><strong>${h(svc.price)}</strong></td></tr>` : ''}
+          </table>
+          ${locationBlock(info.address)}
+          ${calendarButtons(googleUrl, outlookUrl)}
+          <p style="margin-top:24px;color:#666">Até breve, <strong>${h(info.businessName)}</strong></p>
+          ${emailFooter}
+        </div>`,
+    });
+    return true;
+  } catch (err) {
+    console.error('[Email client]', err.message);
+    return false;
+  }
+}
+
+async function sendRescheduleEmail({ settings, booking, oldDate, oldTime }) {
+  const resend = getResend(settings);
+  if (!resend || !booking.email) return false;
+  const info = businessInfo(settings);
+  const { attachment, googleUrl, outlookUrl } = calendarAttachment({ booking, settings, info, uidSuffix: `-${Date.now()}` });
+  try {
+    await resend.emails.send({
+      from:    `${info.businessName} <${EMAIL_FROM}>`,
+      to:      booking.email,
+      subject: `⚠️ Alteração da sua marcação — ${booking.date} às ${booking.time}`,
+      attachments: [attachment],
+      html: `
+        <div style="font-family:sans-serif;max-width:480px">
+          <h2 style="color:#B30000">A sua marcação foi alterada</h2>
+          <p>Olá <strong>${h(booking.name)}</strong>,</p>
+          <p>Informamos que a sua marcação foi alterada. Por favor confirme o novo horário:</p>
+          <table style="border-collapse:collapse;width:100%;margin-top:12px">
+            <tr><td style="padding:6px 8px;color:#888">Antes</td><td style="padding:6px 8px;text-decoration:line-through;color:#999">${h(oldDate)} às ${h(oldTime)}</td></tr>
+            <tr><td style="padding:6px 8px;color:#888">Agora</td><td style="padding:6px 8px;font-size:1.05rem"><strong style="color:#B30000">${h(booking.date)} às ${h(booking.time)}</strong></td></tr>
+            <tr><td style="padding:6px 8px;color:#888">Serviço</td><td style="padding:6px 8px"><strong>${h(booking.service)}</strong> · ${booking.serviceDuration} min</td></tr>
+          </table>
+          ${locationBlock(info.address, 'Local')}
+          ${calendarButtons(googleUrl, outlookUrl)}
+          <p style="margin-top:20px;color:#666">Se o novo horário não lhe for conveniente, contacte-nos${info.businessPhone ? ` pelo <strong>${h(info.businessPhone)}</strong>` : ''}.</p>
+          <p style="margin-top:16px;color:#666">Até breve, <strong>${h(info.businessName)}</strong></p>
+          ${emailFooter}
+        </div>`,
+    });
+    return true;
+  } catch (err) {
+    console.error('[Email reschedule]', err.message);
+    return false;
+  }
+}
+
+/* ── Handler ──────────────────────────────────────────── */
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // ── List (admin) ─────────────────────────────────────
   if (req.method === 'GET') {
     const admin = await requireAdmin(req, res);
     if (!admin) return;
-    const raw      = (await kv.lrange('bookings', 0, 99)) || [];
-    const bookings = raw.map(b => (typeof b === 'string' ? JSON.parse(b) : b)).reverse();
+    const bookings = (await readBookings()).reverse();
     return res.status(200).json({ bookings });
   }
 
+  // ── Create ───────────────────────────────────────────
   if (req.method === 'POST') {
-    const { name, email, phone, message, date, time, serviceId } = req.body || {};
+    const body = req.body || {};
+    const isAdmin = body.admin === true;
+    if (isAdmin && !(await requireAdmin(req, res))) return;
 
-    if (!name || !email || !date || !time) {
-      return res.status(400).json({ error: 'Campos obrigatórios em falta' });
+    const name    = clean(body.name, 100);
+    const email   = clean(body.email, 160).toLowerCase();
+    const phone   = clean(body.phone, 30);
+    const message = clean(body.message, 1000);
+    const { date, time, serviceId } = body;
+
+    if (!name || !isDatePt(date) || !isTime(time)) {
+      return res.status(400).json({ error: 'Nome, data e hora são obrigatórios.' });
     }
+    if (!isAdmin && !email) return res.status(400).json({ error: 'O email é obrigatório.' });
+    if (email && !isEmail(email)) return res.status(400).json({ error: 'Email inválido.' });
 
-    // Batch all reads into a single pipeline (4 reads → 1 request)
     const pipe = kv.pipeline();
     pipe.get('settings');
     pipe.get('services');
     pipe.get('admin_config');
-    pipe.lrange('bookings', 0, 999);
-    const [settingsRaw, servicesRaw, adminConfig, existing] = await pipe.exec();
+    pipe.lrange('bookings', 0, MAX_BOOKINGS - 1);
+    pipe.get('schedule');
+    pipe.get('blockouts');
+    const [settingsRaw, servicesRaw, adminConfig, existingRaw, scheduleRaw, blockouts] = await pipe.exec();
+    const settings = settingsRaw || {};
+    const services = servicesRaw || [];
+    const existing = parseList(existingRaw);
+    const defaultDur = Number(settings.duration) || 30;
 
-    const settings      = settingsRaw || {};
-    const address       = settings.address       || '';
-    const businessName  = settings.businessName  || 'SlotBook';
-    const businessPhone = settings.businessPhone || '';
-    const businessEmail = settings.businessEmail || '';
-
-    // Resolve service info
-    let duration         = settings.duration    || 30;
-    let serviceLabel     = settings.serviceName || '';
-    let serviceDescription = '';
-    let servicePrice     = '';
-
-    if (serviceId) {
-      const svc = (servicesRaw || []).find(s => s.id === serviceId);
-      if (svc) {
-        duration           = svc.duration;
-        serviceLabel       = svc.name;
-        serviceDescription = svc.description || '';
-        servicePrice       = svc.price       || '';
-      }
+    if (services.length && !services.some(s => s.id === serviceId)) {
+      return res.status(400).json({ error: 'Por favor selecione um serviço.' });
     }
+    const svc = resolveService(services, serviceId, settings);
 
-    const displayLabel = serviceLabel || `Consulta · ${duration} min`;
-
-    // Prevent overlapping bookings
-    const timeToMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-    const newStart  = timeToMin(time);
-    const newEnd    = newStart + duration;
-    const conflict = existing.some(b => {
-      const bk = typeof b === 'string' ? JSON.parse(b) : b;
-      if (bk.date !== date) return false;
-      const bkStart = timeToMin(bk.time);
-      const bkEnd   = bkStart + (bk.serviceDuration || settings.duration || 30);
-      return bkStart < newEnd && bkEnd > newStart;
-    });
-    if (conflict) {
-      return res.status(409).json({ error: 'Este horário já está ocupado. Por favor escolha outro horário.' });
+    if (isAdmin) {
+      // The owner can book anywhere (lunch, closed days…) — only warn about overlaps
+      const conflict = findConflict(existing, { date, time, duration: svc.duration, defaultDur });
+      if (conflict && !body.force) {
+        return res.status(409).json({
+          error: `Sobrepõe a marcação de ${conflict.name} às ${conflict.time}.`,
+          conflict: { name: conflict.name, time: conflict.time },
+        });
+      }
+    } else {
+      if (settings.bookingEnabled === false) {
+        return res.status(403).json({ error: 'As marcações online estão desativadas.' });
+      }
+      const problem = SlotLogic.checkBookable({
+        schedule: scheduleRaw || SlotLogic.DEFAULT_SCHEDULE, blockouts, bookings: existing,
+        datePt: date, time, duration: svc.duration, defaultDur,
+      });
+      if (problem) return res.status(409).json({ error: problem });
     }
 
     const booking = {
-      id: Date.now().toString(),
-      name,
-      email,
-      phone:           phone   || '',
-      message:         message || '',
-      date,
-      time,
-      service:         displayLabel,
-      serviceId:       serviceId       || '',
-      serviceDuration: duration,
+      id:              `${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+      name, email, phone, message, date, time,
+      service:         svc.label,
+      serviceId:       svc.id,
+      serviceDuration: svc.duration,
+      source:          isAdmin ? 'admin' : 'online',
       createdAt:       new Date().toISOString(),
     };
 
-    // lpush + ltrim batched into one pipeline (2 writes → 1 request)
+    const googleEventId = await createGoogleEvent({ settings, adminConfig, booking, svc });
+    if (googleEventId) booking.googleEventId = googleEventId;
+
     const writePipe = kv.pipeline();
     writePipe.lpush('bookings', JSON.stringify(booking));
-    writePipe.ltrim('bookings', 0, 199);
+    writePipe.ltrim('bookings', 0, MAX_BOOKINGS - 1);
     await writePipe.exec();
 
-    const startLocal = toLocalISO(date, time);
-    const endLocal   = addMinutes(startLocal, duration);
-
-    let meetLink = null;
-
-    try {
-      const auth = await getAuthorizedClient();
-      if (!auth) {
-        console.log('[bookings] Google Calendar não ligado — evento não criado');
-      } else {
-        const adminEmail = settings.notificationEmail || (adminConfig || {}).email;
-
-        const attendees = [{ email }];
-        if (adminEmail && adminEmail !== email) attendees.push({ email: adminEmail });
-
-        const eventTitle = businessName;
-        const mapsLink  = address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : '';
-
-        console.log(`[bookings] A criar evento: ${startLocal} → ${endLocal}, convidados: ${attendees.map(a=>a.email).join(', ')}`);
-
-        const event = await createCalendarEvent(auth, {
-          title:       eventTitle,
-          description: [
-            `Cliente: ${name}`,
-            `Email: ${email}`,
-            `Telemóvel: ${phone || '—'}`,
-            '',
-            `Serviço: ${displayLabel}`,
-            serviceDescription ? `Descrição: ${serviceDescription}` : null,
-            servicePrice       ? `Preço: ${servicePrice}`           : null,
-            message ? `\nNotas: ${message}` : null,
-            '',
-            '─────────────────',
-            address       ? `📍 ${address}`       : null,
-            mapsLink      ? `🗺 ${mapsLink}`       : null,
-            businessPhone ? `📞 ${businessPhone}`  : null,
-            businessEmail ? `✉ ${businessEmail}`   : null,
-          ].filter(l => l !== null).join('\n').trim(),
-          startLocal,
-          endLocal,
-          attendees,
-          location:    address || null,
-          noMeet:      true,
-        });
-
-        if (!address) {
-          meetLink = event?.conferenceData?.entryPoints?.find(e => e.entryPointType === 'video')?.uri || null;
-        }
-        console.log(`[bookings] Evento criado. Local: ${address || meetLink || 'nenhum'}`);
-      }
-    } catch (err) {
-      console.error('[bookings] Google Calendar erro:', err.message, err.code || '');
+    let emailSent = false;
+    if (isAdmin) {
+      if (body.sendEmail && booking.email) emailSent = await sendClientConfirmation({ settings, booking, svc });
+    } else {
+      await sendAdminNotification({ settings, adminConfig, booking, svc });
+      emailSent = await sendClientConfirmation({ settings, booking, svc });
     }
 
-    const resendKey   = process.env.RESEND_API_KEY || settings.resendApiKey || '';
-
-    if (resendKey) {
-      const resend      = new Resend(resendKey);
-      const notifyEmail = settings.notificationEmail || (adminConfig || {}).email;
-      const eventTitle  = `${name} — ${serviceLabel || businessName}`;
-
-      // Service details rows for emails
-      const svcRowsAdmin = `
-        <tr><td style="padding:4px 8px;color:#888">Serviço</td><td style="padding:4px 8px"><strong>${displayLabel}</strong></td></tr>
-        <tr><td style="padding:4px 8px;color:#888">Duração</td><td style="padding:4px 8px">${duration} min</td></tr>
-        ${serviceDescription ? `<tr><td style="padding:4px 8px;color:#888">Descrição</td><td style="padding:4px 8px">${serviceDescription}</td></tr>` : ''}
-        ${servicePrice ? `<tr><td style="padding:4px 8px;color:#888">Preço</td><td style="padding:4px 8px"><strong>${servicePrice}</strong></td></tr>` : ''}
-      `;
-
-      // Location or Meet block for admin email
-      const locationAdminHtml = address
-        ? `<tr><td style="padding:4px 8px;color:#888">Local</td><td style="padding:4px 8px"><strong>${address}</strong></td></tr>`
-        : meetLink
-          ? `<tr><td style="padding:4px 8px;color:#888">Meet</td><td style="padding:4px 8px"><a href="${meetLink}" style="color:#B30000">Entrar na reunião</a></td></tr>`
-          : '';
-
-      const desc = [
-        `Serviço: ${displayLabel}`,
-        serviceDescription ? `Descrição: ${serviceDescription}` : null,
-        servicePrice ? `Preço: ${servicePrice}` : null,
-        `Email: ${email}`,
-        phone ? `Telemóvel: ${phone}` : null,
-        address ? `Local: ${address}` : null,
-        message ? `\n${message}` : null,
-      ].filter(Boolean).join('\n');
-
-      const icsContent = generateICS({
-        uid:            `booking-${booking.id}@${businessName.toLowerCase().replace(/\s+/g,'-')}.app`,
-        title:          eventTitle,
-        description:    desc,
-        location:       address || null,
-        startLocal,
-        endLocal,
-        organizerName:  businessName,
-        organizerEmail: notifyEmail || EMAIL_FROM,
-        attendeeName:   name,
-        attendeeEmail:  email,
-      });
-
-      const googleUrl  = googleCalendarUrl(eventTitle, startLocal, endLocal, desc, address || null);
-      const outlookUrl = outlookCalendarUrl(eventTitle, startLocal, endLocal, desc, address || null);
-
-      const slotbookFooter = `
-        <hr style="border:none;border-top:1px solid #eee;margin:28px 0 10px">
-        <p style="font-size:.72rem;color:#bbb;text-align:center;margin:0">
-          Serviço prestado por <a href="https://www.slotbook.cc" style="color:#B30000;text-decoration:none">SlotBook</a>
-        </p>`;
-
-      if (notifyEmail && settings.notifyBookings !== false) {
-        try {
-          await resend.emails.send({
-            from:    `${businessName} <${EMAIL_FROM}>`,
-            to:      notifyEmail,
-            subject: `📅 Nova marcação: ${name} — ${date} às ${time}`,
-            html: `
-              <div style="font-family:sans-serif;max-width:480px">
-                <h2 style="color:#B30000">Nova Marcação</h2>
-                <table style="border-collapse:collapse;width:100%">
-                  <tr><td style="padding:4px 8px;color:#888">Nome</td><td style="padding:4px 8px"><strong>${name}</strong></td></tr>
-                  <tr><td style="padding:4px 8px;color:#888">Email</td><td style="padding:4px 8px">${email}</td></tr>
-                  <tr><td style="padding:4px 8px;color:#888">Telemóvel</td><td style="padding:4px 8px">${phone || '—'}</td></tr>
-                  <tr><td style="padding:4px 8px;color:#888">Data</td><td style="padding:4px 8px"><strong>${date} às ${time}</strong></td></tr>
-                  ${svcRowsAdmin}
-                  ${message ? `<tr><td style="padding:4px 8px;color:#888;vertical-align:top">Mensagem</td><td style="padding:4px 8px">${message}</td></tr>` : ''}
-                  ${locationAdminHtml}
-                </table>
-                ${slotbookFooter}
-              </div>`,
-          });
-        } catch (err) {
-          console.error('[Email admin]', err.message);
-        }
-      }
-
-      // Location or Meet block for client email
-      const locationClientHtml = address
-        ? `<div style="margin-top:16px;padding:14px 18px;background:#f9f5ee;border-radius:8px;border-left:3px solid #B30000">
-            <p style="margin:0;font-size:.88rem;color:#666">📍 <strong style="color:#333">Local do encontro:</strong></p>
-            <p style="margin:6px 0 0;font-weight:600;color:#1A1612">${address}</p>
-          </div>`
-        : meetLink
-          ? `<p style="margin-top:16px"><a href="${meetLink}" style="display:inline-block;padding:12px 24px;background:#B30000;color:#fff;text-decoration:none;border-radius:8px;font-weight:500">Entrar na reunião Google Meet</a></p>`
-          : '';
-
-      try {
-        await resend.emails.send({
-          from:    `${businessName} <${EMAIL_FROM}>`,
-          to:      email,
-          subject: `Marcação confirmada — ${date} às ${time}`,
-          attachments: [{
-            filename:    'convite.ics',
-            content:     Buffer.from(icsContent).toString('base64'),
-            contentType: 'text/calendar; charset=utf-8; method=REQUEST',
-          }],
-          html: `
-            <div style="font-family:sans-serif;max-width:480px">
-              <h2 style="color:#B30000">Marcação Confirmada!</h2>
-              <p>Olá <strong>${name}</strong>,</p>
-              <p>A tua marcação foi confirmada para <strong>${date} às ${time}</strong>.</p>
-              <table style="border-collapse:collapse;width:100%;margin-top:12px">
-                <tr><td style="padding:4px 8px;color:#888">Serviço</td><td style="padding:4px 8px"><strong>${displayLabel}</strong></td></tr>
-                <tr><td style="padding:4px 8px;color:#888">Duração</td><td style="padding:4px 8px">${duration} min</td></tr>
-                ${serviceDescription ? `<tr><td style="padding:4px 8px;color:#888">Descrição</td><td style="padding:4px 8px">${serviceDescription}</td></tr>` : ''}
-                ${servicePrice ? `<tr><td style="padding:4px 8px;color:#888">Preço</td><td style="padding:4px 8px"><strong>${servicePrice}</strong></td></tr>` : ''}
-              </table>
-              ${locationClientHtml}
-              <div style="margin-top:24px;padding:16px;background:#f9f5ee;border-radius:8px">
-                <p style="margin:0 0 12px;color:#666;font-size:.88rem">Adiciona ao teu calendário:</p>
-                <a href="${googleUrl}" style="display:inline-block;margin-right:8px;margin-bottom:8px;padding:9px 16px;background:#4285F4;color:#fff;text-decoration:none;border-radius:6px;font-size:.85rem;font-weight:500">📅 Google Calendar</a>
-                <a href="${outlookUrl}" style="display:inline-block;margin-bottom:8px;padding:9px 16px;background:#0078D4;color:#fff;text-decoration:none;border-radius:6px;font-size:.85rem;font-weight:500">📅 Outlook</a>
-                <p style="margin:8px 0 0;color:#999;font-size:.78rem">O ficheiro <strong>convite.ics</strong> em anexo também funciona em qualquer aplicação de calendário (iOS, Android, etc.).</p>
-              </div>
-              <p style="margin-top:24px;color:#666">Até breve, <strong>${businessName}</strong></p>
-              ${slotbookFooter}
-            </div>`,
-        });
-      } catch (err) {
-        console.error('[Email client]', err.message);
-      }
-    }
-
-    return res.status(200).json({ ok: true, booking });
+    return res.status(200).json({ ok: true, booking, emailSent });
   }
 
+  // ── Update / move (admin) ────────────────────────────
   if (req.method === 'PUT') {
-    const admin = await requireAdmin(req, res);
-    if (!admin) return;
+    if (!(await requireAdmin(req, res))) return;
+    const body = req.body || {};
+    if (!body.id) return res.status(400).json({ error: 'id em falta' });
 
-    const { id, date, time } = req.body || {};
-    if (!id || !date || !time) {
-      return res.status(400).json({ error: 'id, date e time são obrigatórios' });
-    }
-
-    const raw = (await kv.lrange('bookings', 0, 999)) || [];
-    const bookings = raw.map(b => (typeof b === 'string' ? JSON.parse(b) : b));
-    const idx = bookings.findIndex(b => b.id === id);
+    const pipe = kv.pipeline();
+    pipe.get('settings');
+    pipe.get('services');
+    pipe.lrange('bookings', 0, MAX_BOOKINGS - 1);
+    const [settingsRaw, servicesRaw, raw] = await pipe.exec();
+    const settings = settingsRaw || {};
+    const bookings = parseList(raw);
+    const idx = bookings.findIndex(b => b.id === body.id);
     if (idx === -1) return res.status(404).json({ error: 'Marcação não encontrada' });
 
     const original = bookings[idx];
-    const timeChanged = original.time !== time || original.date !== date;
+    const updated  = { ...original };
 
-    bookings[idx] = { ...original, date, time };
-
-    // Rewrite the entire list (KV list has no random-access update)
-    // del + one batched lpush = 2 requests regardless of list size
-    await kv.del('bookings');
-    if (bookings.length > 0) {
-      // lpush(key, v1, v2, …) pushes left; last arg ends at head.
-      // bookings[0] is newest → pass reversed so newest lands at index 0.
-      await kv.lpush('bookings', ...bookings.slice().reverse().map(b => JSON.stringify(b)));
+    if (body.date !== undefined) {
+      if (!isDatePt(body.date)) return res.status(400).json({ error: 'Data inválida' });
+      updated.date = body.date;
+    }
+    if (body.time !== undefined) {
+      if (!isTime(body.time)) return res.status(400).json({ error: 'Hora inválida' });
+      updated.time = body.time;
+    }
+    if (body.name !== undefined) {
+      updated.name = clean(body.name, 100);
+      if (!updated.name) return res.status(400).json({ error: 'O nome é obrigatório.' });
+    }
+    if (body.email !== undefined) {
+      updated.email = clean(body.email, 160).toLowerCase();
+      if (updated.email && !isEmail(updated.email)) return res.status(400).json({ error: 'Email inválido.' });
+    }
+    if (body.phone !== undefined)   updated.phone   = clean(body.phone, 30);
+    if (body.message !== undefined) updated.message = clean(body.message, 1000);
+    if (body.serviceId !== undefined && body.serviceId !== original.serviceId) {
+      const services = servicesRaw || [];
+      if (!services.some(s => s.id === body.serviceId)) return res.status(400).json({ error: 'Serviço inválido.' });
+      const svc = resolveService(services, body.serviceId, settings);
+      Object.assign(updated, { serviceId: svc.id, service: svc.label, serviceDuration: svc.duration });
     }
 
-    // Send rescheduling email to client if time/date changed
-    if (timeChanged) {
-      const updated   = bookings[idx];
-      const settings  = (await kv.get('settings')) || {};
-      const businessName  = settings.businessName  || 'SlotBook';
-      const address       = settings.address       || '';
-      const resendKey     = process.env.RESEND_API_KEY || settings.resendApiKey || '';
+    const conflict = findConflict(bookings, {
+      date: updated.date, time: updated.time, duration: Number(updated.serviceDuration) || 30,
+      defaultDur: Number(settings.duration) || 30, excludeId: updated.id,
+    });
+    if (conflict && !body.force) {
+      return res.status(409).json({
+        error: `Sobrepõe a marcação de ${conflict.name} às ${conflict.time}.`,
+        conflict: { name: conflict.name, time: conflict.time },
+      });
+    }
 
-      if (resendKey && updated.email) {
-        const resend      = new Resend(resendKey);
-        const duration    = updated.serviceDuration || settings.duration || 30;
-        const displayLabel = updated.service || `Marcação · ${duration} min`;
-        const startLocal  = toLocalISO(date, time);
-        const endLocal    = addMinutes(startLocal, duration);
+    const moved = original.date !== updated.date || original.time !== updated.time
+      || original.serviceDuration !== updated.serviceDuration;
+    updated.updatedAt = new Date().toISOString();
+    bookings[idx] = updated;
+    await writeBookings(bookings);
 
-        const desc = [
-          `Serviço: ${displayLabel}`,
-          address ? `Local: ${address}` : null,
-        ].filter(Boolean).join('\n');
-
-        const icsContent = generateICS({
-          uid:            `booking-${updated.id}-reschedule@${businessName.toLowerCase().replace(/\s+/g,'-')}.app`,
-          title:          `${updated.name} — ${displayLabel}`,
-          description:    desc,
-          location:       address || null,
-          startLocal,
-          endLocal,
-          organizerName:  businessName,
-          organizerEmail: settings.notificationEmail || EMAIL_FROM,
-          attendeeName:   updated.name,
-          attendeeEmail:  updated.email,
-        });
-
-        const googleUrl  = googleCalendarUrl(`${updated.name} — ${displayLabel}`, startLocal, endLocal, desc, address || null);
-        const outlookUrl = outlookCalendarUrl(`${updated.name} — ${displayLabel}`, startLocal, endLocal, desc, address || null);
-
-        const locationHtml = address
-          ? `<div style="margin-top:16px;padding:14px 18px;background:#f9f5ee;border-radius:8px;border-left:3px solid #B30000">
-              <p style="margin:0;font-size:.88rem;color:#666">📍 <strong style="color:#333">Local:</strong></p>
-              <p style="margin:6px 0 0;font-weight:600;color:#1A1612">${address}</p>
-            </div>`
-          : '';
-
-        try {
-          await resend.emails.send({
-            from:    `${businessName} <${EMAIL_FROM}>`,
-            to:      updated.email,
-            subject: `Marcação reagendada — ${date} às ${time}`,
-            attachments: [{
-              filename:    'convite.ics',
-              content:     Buffer.from(icsContent).toString('base64'),
-              contentType: 'text/calendar; charset=utf-8; method=REQUEST',
-            }],
-            html: `
-              <div style="font-family:sans-serif;max-width:480px">
-                <h2 style="color:#B30000">Marcação Reagendada</h2>
-                <p>Olá <strong>${updated.name}</strong>,</p>
-                <p>A tua marcação foi reagendada para <strong>${date} às ${time}</strong>.</p>
-                <table style="border-collapse:collapse;width:100%;margin-top:12px">
-                  <tr><td style="padding:4px 8px;color:#888">Serviço</td><td style="padding:4px 8px"><strong>${displayLabel}</strong></td></tr>
-                  <tr><td style="padding:4px 8px;color:#888">Nova data</td><td style="padding:4px 8px"><strong>${date} às ${time}</strong></td></tr>
-                  <tr><td style="padding:4px 8px;color:#888">Duração</td><td style="padding:4px 8px">${duration} min</td></tr>
-                </table>
-                ${locationHtml}
-                <div style="margin-top:24px;padding:16px;background:#f9f5ee;border-radius:8px">
-                  <p style="margin:0 0 12px;color:#666;font-size:.88rem">Adiciona ao teu calendário:</p>
-                  <a href="${googleUrl}" style="display:inline-block;margin-right:8px;margin-bottom:8px;padding:9px 16px;background:#4285F4;color:#fff;text-decoration:none;border-radius:6px;font-size:.85rem;font-weight:500">📅 Google Calendar</a>
-                  <a href="${outlookUrl}" style="display:inline-block;margin-bottom:8px;padding:9px 16px;background:#0078D4;color:#fff;text-decoration:none;border-radius:6px;font-size:.85rem;font-weight:500">📅 Outlook</a>
-                  <p style="margin:8px 0 0;color:#999;font-size:.78rem">O ficheiro <strong>convite.ics</strong> em anexo funciona em qualquer aplicação de calendário.</p>
-                </div>
-                <p style="margin-top:24px;color:#666">Até breve, <strong>${businessName}</strong></p>
-              </div>`,
-          });
-        } catch (err) {
-          console.error('[Email reschedule]', err.message);
-        }
+    let emailSent = false;
+    if (moved) {
+      await moveGoogleEvent(updated, Boolean(body.notify));
+      if (body.notify) {
+        emailSent = await sendRescheduleEmail({ settings, booking: updated, oldDate: original.date, oldTime: original.time });
       }
     }
+    return res.status(200).json({ ok: true, booking: updated, previous: { date: original.date, time: original.time }, emailSent });
+  }
 
-    return res.status(200).json({ ok: true, booking: bookings[idx] });
+  // ── Delete (admin) ───────────────────────────────────
+  if (req.method === 'DELETE') {
+    if (!(await requireAdmin(req, res))) return;
+    const id = req.query.id;
+    if (!id) return res.status(400).json({ error: 'id em falta' });
+    const bookings = await readBookings();
+    const target = bookings.find(b => b.id === id);
+    if (!target) return res.status(404).json({ error: 'Marcação não encontrada' });
+    await writeBookings(bookings.filter(b => b.id !== id));
+    await removeGoogleEvent(target);
+    return res.status(200).json({ ok: true });
   }
 
   return res.status(405).end();

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   SLOTBOOK — admin.js (dashboard)
+   Intemporal Barbearia — admin.js (dashboard)
    ═══════════════════════════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -45,6 +45,7 @@ function initTabs() {
       tab.classList.add('active');
       tab.setAttribute('aria-selected', 'true');
       document.getElementById(`tab-${id}`)?.classList.add('active');
+      if (id === 'bookings') _agenda.calendar?.updateSize();
     });
   });
 }
@@ -57,107 +58,469 @@ function initLogout() {
   });
 }
 
-/* ── Bookings ───────────────────────────────────────────── */
+/* ── Agenda (bookings calendar) ─────────────────────────── */
+const _agenda = { calendar: null, bookings: [], services: [], schedule: null, settings: null };
+
+const pad2 = n => String(n).padStart(2, '0');
+const ptDate   = d => `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()}`;   // Date → DD/MM/YYYY
+const isoDate  = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;   // Date → YYYY-MM-DD
+const hhmm     = d => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+const ptToIso  = s => { const [d, m, y] = s.split('/'); return `${y}-${m}-${d}`; };
+const isoToPt  = s => { const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; };
+const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const prettyDate = (datePt, time) => {
+  const [d, m, y] = datePt.split('/').map(Number);
+  return `${WEEKDAYS[new Date(y, m - 1, d).getDay()]} ${datePt.slice(0, 5)} às ${time}`;
+};
+
+// Fallback colour when a service has none (stable per service name)
+function serviceColor(b) {
+  const svc = _agenda.services.find(s => s.id === b.serviceId);
+  if (svc && svc.color) return svc.color;
+  const key = b.serviceId || b.service || '';
+  let hash = 0;
+  for (const ch of key) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return SVC_PALETTE[hash % SVC_PALETTE.length];
+}
+
+function textColorFor(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  return lum > 0.62 ? '#1a1612' : '#ffffff';
+}
+
+function bookingToEvent(b) {
+  const start = new Date(`${ptToIso(b.date)}T${b.time}:00`);
+  const end   = new Date(start.getTime() + (Number(b.serviceDuration) || 30) * 60000);
+  const color = serviceColor(b);
+  return {
+    id: b.id, start, end,
+    title: b.name,
+    backgroundColor: color, borderColor: color, textColor: textColorFor(color),
+    extendedProps: { booking: b },
+  };
+}
+
+function blockoutToEvent(bo) {
+  const start = new Date(`${bo.startDate}T${bo.startTime || '00:00'}:00`);
+  const end   = bo.endTime ? new Date(`${bo.endDate}T${bo.endTime}:00`)
+                           : new Date(new Date(`${bo.endDate}T00:00:00`).getTime() + 86400000);
+  return { start, end, display: 'background', classNames: ['agenda-blockout'], title: bo.label || 'Indisponível' };
+}
+
+function businessHoursFrom(schedule) {
+  const DOW = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+  const out = [];
+  Object.entries(DOW).forEach(([key, dow]) => {
+    const d = (schedule || {})[key];
+    if (!d || !d.active) return;
+    [[d.start1, d.end1], [d.start2, d.end2]].forEach(([s, e]) => {
+      if (s && e && e > s) out.push({ daysOfWeek: [dow], startTime: s, endTime: e });
+    });
+  });
+  return out.length ? out : false;
+}
+
+// Visible hours: at least 07:00–22:00, widened to fit the schedule
+function visibleRange(schedule) {
+  let min = 7 * 60, max = 22 * 60;
+  Object.values(schedule || {}).forEach(d => {
+    if (!d || !d.active) return;
+    [d.start1, d.start2].forEach(t => { if (t) { const [h, m] = t.split(':').map(Number); min = Math.min(min, h * 60 + m - 60); } });
+    [d.end1, d.end2].forEach(t => { if (t) { const [h, m] = t.split(':').map(Number); max = Math.max(max, h * 60 + m + 60); } });
+  });
+  min = Math.max(0, Math.floor(min / 60) * 60);
+  max = Math.min(24 * 60, Math.ceil(max / 60) * 60);
+  const t = m => `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}:00`;
+  return { slotMinTime: t(min), slotMaxTime: t(max) };
+}
+
+function initAgenda() {
+  const el = document.getElementById('agenda');
+  if (!el || typeof FullCalendar === 'undefined') return;
+  const narrow = window.innerWidth < 760;
+
+  _agenda.calendar = new FullCalendar.Calendar(el, {
+    locale: 'pt',
+    initialView: narrow ? 'timeGridDay' : 'timeGridWeek',
+    headerToolbar: narrow
+      ? { left: 'prev,next', center: 'title', right: 'today' }
+      : { left: 'prev,next today', center: 'title', right: 'timeGridDay,timeGridWeek,dayGridMonth' },
+    footerToolbar: narrow ? { center: 'timeGridDay,timeGridWeek,dayGridMonth' } : false,
+    firstDay: 1,
+    allDaySlot: false,
+    slotDuration: '00:15:00',
+    slotLabelInterval: '01:00',
+    snapDuration: '00:05:00',
+    slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+    eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+    dayHeaderFormat: narrow ? { weekday: 'short', day: 'numeric' } : { weekday: 'short', day: 'numeric', month: 'numeric' },
+    height: Math.max(560, window.innerHeight - 250),
+    nowIndicator: true,
+    scrollTime: `${pad2(Math.max(0, new Date().getHours() - 1))}:00:00`,
+    editable: true,
+    eventDurationEditable: false,
+    eventOverlap: true,
+    dayMaxEvents: 4,
+    ...visibleRange(null),
+    events: (info, success) => {
+      const events = _agenda.bookings.map(bookingToEvent);
+      ((_agenda.schedule || {}).blockouts || []).forEach(bo => events.push(blockoutToEvent(bo)));
+      success(events);
+    },
+    eventContent: arg => {
+      const b = arg.event.extendedProps.booking;
+      if (!b) return { html: `<div class="agenda-bo-label">${esc(arg.event.title)}</div>` };
+      const dur = Number(b.serviceDuration) || 30;
+      if (arg.view.type === 'dayGridMonth') {
+        return { html: `<div class="agenda-ev-month"><b>${esc(b.time)}</b> ${esc(b.name)}</div>` };
+      }
+      return { html: `
+        <div class="agenda-ev">
+          <div class="agenda-ev-name">${esc(b.name)}</div>
+          <div class="agenda-ev-time">${esc(b.time)} (${dur}min)</div>
+          <div class="agenda-ev-svc">${esc(b.service || '')}</div>
+        </div>` };
+    },
+    eventDidMount: arg => {
+      const b = arg.event.extendedProps.booking;
+      if (b) arg.el.title = `${b.name} · ${b.time} · ${b.service || ''}${b.phone ? ' · ' + b.phone : ''}`;
+    },
+    dateClick: info => {
+      if (info.view.type === 'dayGridMonth') {
+        _agenda.calendar.changeView('timeGridDay', info.date);
+        return;
+      }
+      openBookingModal({ date: info.date });
+    },
+    eventClick: info => {
+      const b = info.event.extendedProps.booking;
+      if (b) openBookingModal({ booking: b });
+    },
+    eventDrop: info => handleEventDrop(info),
+  });
+  _agenda.calendar.render();
+
+  document.getElementById('newBookingBtn')?.addEventListener('click', () => {
+    const d = new Date();
+    d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0);
+    openBookingModal({ date: d });
+  });
+  initBookingModal();
+  initDialog();
+}
+
+function applyScheduleToAgenda() {
+  const cal = _agenda.calendar;
+  if (!cal || !_agenda.schedule) return;
+  cal.setOption('businessHours', businessHoursFrom(_agenda.schedule));
+  const { slotMinTime, slotMaxTime } = visibleRange(_agenda.schedule);
+  cal.setOption('slotMinTime', slotMinTime);
+  cal.setOption('slotMaxTime', slotMaxTime);
+  cal.refetchEvents();
+}
+
+function renderAgendaLegend() {
+  const el = document.getElementById('agendaLegend');
+  if (!el) return;
+  el.innerHTML = _agenda.services.map(s =>
+    `<span class="agenda-legend-item"><i style="background:${esc(s.color || serviceColor({ serviceId: s.id, service: s.name }))}"></i>${esc(s.name)}</span>`
+  ).join('');
+}
+
 async function loadBookings() {
   document.getElementById('refreshBtn')?.addEventListener('click', fetchBookings);
+  initAgenda();
   await fetchBookings();
 }
 
 async function fetchBookings() {
   const stateEl = document.getElementById('bookingsState');
-  const gridEl  = document.getElementById('weekGrid');
-  const emptyEl = document.getElementById('bookingsEmpty');
-
-  stateEl.textContent = 'A carregar…';
-  stateEl.style.display = 'block';
-  gridEl.innerHTML = '';
-  emptyEl.style.display = 'none';
-
   try {
     const res = await apiFetch('/api/bookings');
     if (!res.ok) throw new Error('Erro ' + res.status);
     const { bookings } = await res.json();
-
-    _waData.bookings = bookings || [];
-    renderWaPanel();
-
+    _agenda.bookings = bookings || [];
+    _waData.bookings = _agenda.bookings;
     stateEl.style.display = 'none';
-
-    // Build 7-day window: today + 6 days
-    const days = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      const dd   = String(d.getDate()).padStart(2, '0');
-      const mm   = String(d.getMonth() + 1).padStart(2, '0');
-      const yyyy = d.getFullYear();
-      days.push({
-        key:   `${dd}/${mm}/${yyyy}`,
-        label: i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : DAY_NAMES[d.getDay()],
-        date:  `${dd}/${mm}`,
-      });
-    }
-
-    // Group bookings by date key
-    const byDay = {};
-    (bookings || []).forEach(b => { (byDay[b.date] = byDay[b.date] || []).push(b); });
-    days.forEach(d => { if (!byDay[d.key]) byDay[d.key] = []; });
-
-    // Sort each day by time
-    days.forEach(d => byDay[d.key].sort((a, b) => a.time.localeCompare(b.time)));
-
-    const totalBookings = days.reduce((s, d) => s + byDay[d.key].length, 0);
-    if (totalBookings === 0) { emptyEl.style.display = 'block'; return; }
-
-    days.forEach((d, i) => {
-      const col = document.createElement('div');
-      col.className = 'wg-col' + (i === 0 ? ' wg-today' : '');
-
-      const head = document.createElement('div');
-      head.className = 'wg-head';
-      head.innerHTML = `<span class="wg-label">${d.label}</span><span class="wg-date">${d.date}</span>`;
-      col.appendChild(head);
-
-      const body = document.createElement('div');
-      body.className = 'wg-body';
-
-      if (byDay[d.key].length === 0) {
-        const empty = document.createElement('div');
-        empty.className = 'wg-empty';
-        empty.textContent = '—';
-        body.appendChild(empty);
-      } else {
-        byDay[d.key].forEach(b => {
-          const card = document.createElement('div');
-          card.className = 'wg-card';
-          card.innerHTML = `
-            <div class="wg-time">
-              ${esc(b.time)}${b.serviceDuration ? `<span class="wg-dur"> · ${b.serviceDuration} min</span>` : ''}
-              <button class="wg-edit-btn" data-id="${esc(b.id)}" data-date="${esc(b.date)}" data-time="${esc(b.time)}" title="Editar marcação">✏</button>
-            </div>
-            <div class="wg-name">${esc(b.name)}</div>
-            <div class="wg-svc">${esc(b.service || '—')}</div>
-            <a class="wg-email" href="mailto:${esc(b.email)}">${esc(b.email)}</a>
-            ${b.phone ? `<div class="wg-phone">${esc(b.phone)}</div>` : ''}
-            ${b.message ? `<div class="wg-msg" title="${esc(b.message)}">${esc(b.message)}</div>` : ''}
-          `;
-          body.appendChild(card);
-        });
-      }
-
-      col.appendChild(body);
-      gridEl.appendChild(col);
-    });
+    renderWaPanel();
+    _agenda.calendar?.refetchEvents();
   } catch (err) {
     stateEl.textContent = 'Erro ao carregar marcações: ' + err.message;
+    stateEl.style.display = 'block';
   }
+}
+
+/* ── Generic dialog ─────────────────────────────────────── */
+let _dialogResolve = null;
+
+function initDialog() {
+  const dlg = document.getElementById('dialog');
+  dlg.addEventListener('click', e => { if (e.target === dlg) closeDialog(null); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !dlg.hidden) closeDialog(null); });
+}
+
+function closeDialog(value) {
+  document.getElementById('dialog').hidden = true;
+  const r = _dialogResolve;
+  _dialogResolve = null;
+  if (r) r(value);
+}
+
+/** Shows a dialog and resolves with the value of the clicked button (null when dismissed). */
+function askDialog({ title, html, buttons }) {
+  if (_dialogResolve) closeDialog(null);
+  document.getElementById('dlgTitle').textContent = title;
+  document.getElementById('dlgBody').innerHTML = html || '';
+  const wrap = document.getElementById('dlgButtons');
+  wrap.innerHTML = '';
+  buttons.forEach(b => {
+    const el = document.createElement(b.href ? 'a' : 'button');
+    el.className = b.cls || 'btn-outline';
+    el.textContent = b.label;
+    if (b.href) { el.href = b.href; el.target = '_blank'; el.rel = 'noopener'; }
+    else el.type = 'button';
+    el.addEventListener('click', () => closeDialog(b.value ?? null));
+    wrap.appendChild(el);
+  });
+  document.getElementById('dialog').hidden = false;
+  return new Promise(resolve => { _dialogResolve = resolve; });
+}
+
+/* ── Saving with overlap confirmation ───────────────────── */
+async function sendBooking(method, payload) {
+  let body = { ...payload };
+  for (;;) {
+    const res = await apiFetch('/api/bookings', {
+      method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) return data;
+    if (res.status === 409 && data.conflict && !body.force) {
+      const go = await askDialog({
+        title: 'Horário ocupado',
+        html: `<p>Esta marcação sobrepõe-se à de <strong>${esc(data.conflict.name)}</strong> às <strong>${esc(data.conflict.time)}</strong>.</p><p>Queres guardar mesmo assim?</p>`,
+        buttons: [{ label: 'Cancelar' }, { label: 'Guardar mesmo assim', value: true, cls: 'btn-gold' }],
+      });
+      if (!go) return null;
+      body = { ...body, force: true };
+      continue;
+    }
+    throw new Error(data.error || `Erro ${res.status}`);
+  }
+}
+
+/* ── Move notification ──────────────────────────────────── */
+// Asks whether the client should be told about a new date/time. Resolves 'notify' | 'silent' | null (cancel).
+function askMoveNotify(b, newDate, newTime) {
+  const hasContact = b.email || b.phone;
+  const change = `<p class="dlg-change"><span>${esc(prettyDate(b.date, b.time))}</span> → <strong>${esc(prettyDate(newDate, newTime))}</strong></p>`;
+  if (!hasContact) {
+    return askDialog({
+      title: `Mover marcação de ${b.name}?`,
+      html: change + '<p class="dlg-hint">Este cliente não tem email nem telemóvel, por isso não pode ser avisado.</p>',
+      buttons: [{ label: 'Cancelar' }, { label: 'Mover', value: 'silent', cls: 'btn-gold' }],
+    });
+  }
+  const how = [b.email ? `email para <strong>${esc(b.email)}</strong>` : null, b.phone ? 'opção de enviar WhatsApp' : null].filter(Boolean).join(' e ');
+  return askDialog({
+    title: `Mover marcação de ${b.name}?`,
+    html: change + `<p>Queres avisar o cliente da alteração?</p><p class="dlg-hint">Se sim: ${how}.</p>`,
+    buttons: [
+      { label: 'Cancelar' },
+      { label: 'Mover sem avisar', value: 'silent' },
+      { label: 'Mover e avisar', value: 'notify', cls: 'btn-gold' },
+    ],
+  });
+}
+
+function waChangeLink(b, previous) {
+  const digits = waPhoneDigits(b.phone);
+  if (!digits) return null;
+  const tpl = document.getElementById('waTplChange')?.value || WA_TPL_CHANGE_DEFAULT;
+  const text = waFillTemplate(tpl, b)
+    .replaceAll('{data_antiga}', previous?.date || '')
+    .replaceAll('{hora_antiga}', previous?.time || '');
+  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+}
+
+async function showNotifyResult(result) {
+  const b = result.booking;
+  const lines = [];
+  if (b.email) {
+    lines.push(result.emailSent
+      ? `<p>✓ Email de alteração enviado para <strong>${esc(b.email)}</strong>.</p>`
+      : `<p class="dlg-warn">Não foi possível enviar o email (confirma a configuração do Resend).</p>`);
+  }
+  const wa = waChangeLink(b, result.previous);
+  if (wa) lines.push('<p>Envia também o aviso por WhatsApp:</p>');
+  if (!lines.length) return;
+  await askDialog({
+    title: 'Cliente avisado',
+    html: lines.join(''),
+    buttons: [
+      ...(wa ? [{ label: 'Enviar WhatsApp', href: wa, cls: 'btn-wa' }] : []),
+      { label: 'Fechar', cls: wa ? 'btn-outline' : 'btn-gold' },
+    ],
+  });
+}
+
+async function handleEventDrop(info) {
+  const b = info.event.extendedProps.booking;
+  const newDate = ptDate(info.event.start);
+  const newTime = hhmm(info.event.start);
+  const choice = await askMoveNotify(b, newDate, newTime);
+  if (!choice) { info.revert(); return; }
+  try {
+    const result = await sendBooking('PUT', { id: b.id, date: newDate, time: newTime, notify: choice === 'notify' });
+    if (!result) { info.revert(); return; }
+    await fetchBookings();
+    if (choice === 'notify') await showNotifyResult(result);
+  } catch (err) {
+    info.revert();
+    await askDialog({ title: 'Erro', html: `<p>${esc(err.message)}</p>`, buttons: [{ label: 'Fechar', cls: 'btn-gold' }] });
+  }
+}
+
+/* ── Booking modal (create / edit) ──────────────────────── */
+function fillServiceSelect(selectedId) {
+  const sel = document.getElementById('bmService');
+  const opts = _agenda.services.map(s =>
+    `<option value="${esc(s.id)}"${s.id === selectedId ? ' selected' : ''}>${esc(s.name)} · ${Number(s.duration) || 30} min${s.price ? ' · ' + esc(s.price) : ''}</option>`);
+  if (!_agenda.services.length) opts.unshift('<option value="">Serviço padrão</option>');
+  else if (!selectedId) opts.unshift('<option value="" selected disabled>Escolhe o serviço…</option>');
+  sel.innerHTML = opts.join('');
+}
+
+function openBookingModal({ booking, date }) {
+  const modal = document.getElementById('bookingModal');
+  const isEdit = Boolean(booking);
+  const b = booking || {};
+  const d = date || new Date();
+
+  document.getElementById('bmTitle').textContent = isEdit ? 'Editar marcação' : 'Nova marcação';
+  document.getElementById('bmId').value = b.id || '';
+  fillServiceSelect(b.serviceId || '');
+  document.getElementById('bmName').value    = b.name    || '';
+  document.getElementById('bmPhone').value   = b.phone   || '';
+  document.getElementById('bmEmail').value   = b.email   || '';
+  document.getElementById('bmMessage').value = b.message || '';
+  document.getElementById('bmDate').value    = isEdit ? ptToIso(b.date) : isoDate(d);
+  document.getElementById('bmTime').value    = isEdit ? b.time : hhmm(d);
+  document.getElementById('bmSendEmail').checked = false;
+  document.getElementById('bmSendEmailWrap').hidden = isEdit;
+  document.getElementById('bmDelete').hidden = !isEdit;
+
+  const meta = document.getElementById('bmMeta');
+  meta.textContent = isEdit
+    ? `${b.source === 'admin' ? 'Criada no backoffice' : 'Marcação online'}${b.createdAt ? ' · ' + new Date(b.createdAt).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' }) : ''}`
+    : 'Só o nome e o serviço são obrigatórios — os contactos são opcionais.';
+
+  const wa = document.getElementById('bmWhatsapp');
+  const digits = isEdit ? waPhoneDigits(b.phone) : '';
+  wa.hidden = !digits;
+  if (digits) wa.href = `https://wa.me/${digits}`;
+
+  const err = document.getElementById('bmErr');
+  err.hidden = true;
+  modal.hidden = false;
+  setTimeout(() => document.getElementById(isEdit ? 'bmName' : (_agenda.services.length ? 'bmService' : 'bmName')).focus(), 30);
+}
+
+function closeBookingModal() { document.getElementById('bookingModal').hidden = true; }
+
+function initBookingModal() {
+  const modal = document.getElementById('bookingModal');
+  const form  = document.getElementById('bookingModalForm');
+  const err   = document.getElementById('bmErr');
+  const showErr = msg => { err.textContent = msg; err.hidden = false; };
+
+  modal.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeBookingModal));
+  modal.addEventListener('mousedown', e => { if (e.target === modal) closeBookingModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !modal.hidden && document.getElementById('dialog').hidden) closeBookingModal();
+  });
+  // The email confirmation checkbox only makes sense with an email
+  document.getElementById('bmEmail').addEventListener('input', e => {
+    const box = document.getElementById('bmSendEmail');
+    if (!e.target.value.trim()) box.checked = false;
+  });
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    err.hidden = true;
+    const id = document.getElementById('bmId').value;
+    const payload = {
+      serviceId: document.getElementById('bmService').value,
+      name:      document.getElementById('bmName').value.trim(),
+      phone:     document.getElementById('bmPhone').value.trim(),
+      email:     document.getElementById('bmEmail').value.trim(),
+      message:   document.getElementById('bmMessage').value.trim(),
+      date:      document.getElementById('bmDate').value ? isoToPt(document.getElementById('bmDate').value) : '',
+      time:      document.getElementById('bmTime').value,
+    };
+    if (_agenda.services.length && !payload.serviceId) return showErr('Escolhe o serviço.');
+    if (!payload.name) return showErr('Indica o nome do cliente.');
+    if (!payload.date || !payload.time) return showErr('Indica a data e a hora.');
+    if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return showErr('Email inválido.');
+
+    const saveBtn = document.getElementById('bmSave');
+    saveBtn.disabled = true;
+    try {
+      if (!id) {
+        const sendEmail = document.getElementById('bmSendEmail').checked && Boolean(payload.email);
+        const result = await sendBooking('POST', { ...payload, admin: true, sendEmail });
+        if (!result) return;
+        closeBookingModal();
+        await fetchBookings();
+        return;
+      }
+
+      // Edit: ask about notifying the client when the date/time changes
+      const original = _agenda.bookings.find(b => b.id === id);
+      const moved = original && (original.date !== payload.date || original.time !== payload.time);
+      let notify = false;
+      if (moved) {
+        const merged = { ...original, ...payload };
+        const choice = await askMoveNotify(merged, payload.date, payload.time);
+        if (!choice) return;
+        notify = choice === 'notify';
+      }
+      const result = await sendBooking('PUT', { id, ...payload, notify });
+      if (!result) return;
+      closeBookingModal();
+      await fetchBookings();
+      if (notify) await showNotifyResult(result);
+    } catch (ex) {
+      showErr(ex.message);
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  document.getElementById('bmDelete').addEventListener('click', async () => {
+    const id = document.getElementById('bmId').value;
+    const b = _agenda.bookings.find(x => x.id === id);
+    const ok = await askDialog({
+      title: 'Eliminar marcação?',
+      html: `<p>${esc(b ? `${b.name} — ${prettyDate(b.date, b.time)}` : '')}</p><p class="dlg-hint">Esta ação não pode ser desfeita. O cliente não é avisado automaticamente.</p>`,
+      buttons: [{ label: 'Cancelar' }, { label: 'Eliminar', value: true, cls: 'btn-danger' }],
+    });
+    if (!ok) return;
+    try {
+      const res = await apiFetch(`/api/bookings?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Erro ${res.status}`);
+      closeBookingModal();
+      await fetchBookings();
+    } catch (ex) {
+      showErr(ex.message);
+    }
+  });
 }
 
 /* ── WhatsApp reminders panel ───────────────────────────── */
 const WA_TPL_TODAY_DEFAULT = 'Olá {nome}! 👋 Lembramos a sua marcação de hoje às {hora} — {servico} — em {negocio}, {morada}. Até já!';
+const WA_TPL_CHANGE_DEFAULT = 'Olá {nome}! ⚠️ A sua marcação de {servico} em {negocio} foi alterada: {data_antiga} às {hora_antiga} → {data} às {hora}. Se não lhe for conveniente, responda a esta mensagem ou contacte-nos: {telefone}. Obrigado!';
 const WA_TPL_NEXT_DEFAULT  = 'Olá {nome}! 👋 Lembramos a sua marcação de {servico} no dia {data} às {hora} em {negocio}, {morada}. Qualquer questão contacte-nos: {telefone}. Até breve!';
 
 const _waData = { bookings: null, schedule: null, settings: null };
@@ -183,6 +546,7 @@ function initWhatsapp() {
         body: JSON.stringify({
           waTplToday: document.getElementById('waTplToday').value,
           waTplNext:  document.getElementById('waTplNext').value,
+          waTplChange: document.getElementById('waTplChange').value,
         }),
       });
       if (!res.ok) throw new Error('Erro ' + res.status);
@@ -245,7 +609,7 @@ function waFillTemplate(tpl, b) {
     .replaceAll('{data}',     b.date  || '')
     .replaceAll('{servico}',  b.service || '')
     .replaceAll('{duracao}',  b.serviceDuration ? `${b.serviceDuration} min` : '')
-    .replaceAll('{negocio}',  s.businessName  || '')
+    .replaceAll('{negocio}',  s.businessName  || 'Intemporal Barbearia')
     .replaceAll('{telefone}', s.businessPhone || '')
     .replaceAll('{morada}',   s.address       || '')
     .replaceAll('{email}',    s.businessEmail || '');
@@ -318,6 +682,8 @@ async function loadSchedule() {
     const res  = await fetch('/api/schedule');
     const data = await res.json();
     _waData.schedule = data;
+    _agenda.schedule = data;
+    applyScheduleToAgenda();
     renderWaPanel();
     applyScheduleToGrid(data);
     renderBlockouts(data.blockouts || []);
@@ -509,6 +875,11 @@ async function loadServices() {
 }
 
 function populateServices(services) {
+  // The agenda uses the services for colours, the legend and the booking form
+  _agenda.services = services || [];
+  renderAgendaLegend();
+  _agenda.calendar?.refetchEvents();
+
   const list = document.getElementById('servicesList');
   if (!list) return;
   list.innerHTML = '';
@@ -520,13 +891,18 @@ function populateServices(services) {
   syncRemoveButtons();
 }
 
+// Default colours offered to new services (agenda only)
+const SVC_PALETTE = ['#e5484d', '#3e63dd', '#30a46c', '#f5a524', '#8e4ec6', '#12a594', '#d6409f', '#6e56cf', '#978365', '#0090ff'];
+
 function addServiceRow(data = {}) {
   const list = document.getElementById('servicesList');
   if (!list) return;
   const row = document.createElement('div');
   row.className = 'svc-edit-row';
   row.dataset.id = data.id || '';
+  const color = data.color || SVC_PALETTE[list.children.length % SVC_PALETTE.length];
   row.innerHTML = `
+    <input type="color"  class="svc-color" value="${esc(color)}" title="Cor na agenda">
     <input type="text"   class="svc-name"        placeholder="Nome *"          value="${esc(data.name        || '')}">
     <input type="number" class="svc-duration"     placeholder="Min *" min="1"   value="${esc(String(data.duration || ''))}">
     <input type="text"   class="svc-description"  placeholder="Descrição (aparece no site)" maxlength="240" value="${esc(data.description || '')}">
@@ -563,6 +939,7 @@ async function saveServices() {
     duration:    row.querySelector('.svc-duration').value,
     description: row.querySelector('.svc-description').value.trim(),
     price:       row.querySelector('.svc-price').value.trim(),
+    color:       row.querySelector('.svc-color').value,
   }));
 
   try {
@@ -783,6 +1160,8 @@ async function loadSettings() {
     const tplNextEl  = document.getElementById('waTplNext');
     if (tplTodayEl) tplTodayEl.value = settings.waTplToday || WA_TPL_TODAY_DEFAULT;
     if (tplNextEl)  tplNextEl.value  = settings.waTplNext  || WA_TPL_NEXT_DEFAULT;
+    const tplChangeEl = document.getElementById('waTplChange');
+    if (tplChangeEl) tplChangeEl.value = settings.waTplChange || WA_TPL_CHANGE_DEFAULT;
     renderWaPanel();
 
     const resendStatus = document.getElementById('sResendKeyStatus');
@@ -959,74 +1338,6 @@ function handleURLParams() {
     history.replaceState({}, '', location.pathname);
   }
 }
-
-/* ── Edit booking modal ─────────────────────────────────── */
-(function initEditModal() {
-  const modal     = document.getElementById('editModal');
-  const cancelBtn = document.getElementById('editCancelBtn');
-  const saveBtn   = document.getElementById('editSaveBtn');
-  const errEl     = document.getElementById('editErr');
-  if (!modal) return;
-
-  function close() { modal.style.display = 'none'; }
-
-  cancelBtn.addEventListener('click', close);
-  modal.addEventListener('click', e => { if (e.target === modal) close(); });
-
-  document.addEventListener('click', e => {
-    const btn = e.target.closest('.wg-edit-btn');
-    if (!btn) return;
-    const { id, date, time } = btn.dataset;
-    document.getElementById('editId').value = id;
-    // date is DD/MM/YYYY → convert to YYYY-MM-DD for input[type=date]
-    const [dd, mm, yyyy] = date.split('/');
-    document.getElementById('editDate').value = `${yyyy}-${mm}-${dd}`;
-    document.getElementById('editTime').value = time;
-    errEl.style.display = 'none';
-    errEl.textContent = '';
-    modal.style.display = 'flex';
-  });
-
-  saveBtn.addEventListener('click', async () => {
-    const id   = document.getElementById('editId').value;
-    const dateVal = document.getElementById('editDate').value;
-    const timeVal = document.getElementById('editTime').value;
-    if (!dateVal || !timeVal) {
-      errEl.textContent = 'Por favor preencha data e hora.';
-      errEl.style.display = 'block';
-      return;
-    }
-    // Convert YYYY-MM-DD → DD/MM/YYYY
-    const [y, m, d] = dateVal.split('-');
-    const datePt = `${d}/${m}/${y}`;
-
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'A guardar…';
-    errEl.style.display = 'none';
-
-    try {
-      const res = await apiFetch('/api/bookings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, date: datePt, time: timeVal }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        close();
-        await fetchBookings();
-      } else {
-        errEl.textContent = data.error || 'Erro ao guardar.';
-        errEl.style.display = 'block';
-      }
-    } catch {
-      errEl.textContent = 'Erro de rede. Tenta novamente.';
-      errEl.style.display = 'block';
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Guardar';
-    }
-  });
-})();
 
 /* ── Google Calendar instructions toggle ───────────────── */
 function initGcalInstructions() {

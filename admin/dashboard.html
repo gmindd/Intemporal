@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="admin.css">
+  <script src="vendor/fullcalendar/fullcalendar.min.js"></script>
+  <script src="vendor/fullcalendar/pt.min.js"></script>
 </head>
 <body>
 
@@ -24,7 +26,7 @@
   <nav class="db-tabs" role="tablist">
     <button class="dbt active" data-tab="bookings"  role="tab" aria-selected="true">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      Marcações
+      Agenda
     </button>
     <button class="dbt" data-tab="whatsapp" role="tab" aria-selected="false">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
@@ -55,17 +57,20 @@
   <!-- ─── Content ──────────────────────────────────────── -->
   <main class="db-main">
 
-    <!-- ── Bookings tab ─── -->
+    <!-- ── Bookings tab (agenda) ─── -->
     <section class="db-section active" id="tab-bookings">
       <div class="sec-head">
-        <h1 class="sec-title">Marcações</h1>
-        <button class="btn-outline-sm" id="refreshBtn">↺ Atualizar</button>
+        <h1 class="sec-title">Agenda</h1>
+        <div class="agenda-actions">
+          <button class="btn-outline-sm" id="refreshBtn">↺ Atualizar</button>
+          <button class="btn-gold btn-sm" id="newBookingBtn">+ Nova marcação</button>
+        </div>
       </div>
 
-      <div id="bookingsState" class="state-msg">A carregar…</div>
-
-      <div class="week-grid" id="weekGrid"></div>
-      <p class="bookings-empty" id="bookingsEmpty" style="display:none">Sem marcações nos próximos 7 dias.</p>
+      <div id="bookingsState" class="state-msg" style="display:none"></div>
+      <div class="agenda-legend" id="agendaLegend"></div>
+      <div class="agenda-card"><div id="agenda"></div></div>
+      <p class="sf-hint agenda-help">Clica num horário vazio para criar uma marcação (funciona também fora do horário e em períodos bloqueados) · arrasta uma marcação para mudar a hora · clica numa marcação para editar.</p>
     </section>
 
     <!-- ── WhatsApp tab ─── -->
@@ -105,6 +110,12 @@
         <div class="sf-group">
           <label for="waTplNext">Template — próximo dia útil</label>
           <textarea id="waTplNext" rows="3" class="wa-tpl"></textarea>
+        </div>
+
+        <div class="sf-group">
+          <label for="waTplChange">Template — alteração de marcação</label>
+          <textarea id="waTplChange" rows="3" class="wa-tpl"></textarea>
+          <p class="sf-hint" style="margin-top:6px">Usado no botão de WhatsApp que aparece quando mudas a hora de uma marcação na agenda. Campos extra: <code>{data_antiga}</code> e <code>{hora_antiga}</code>.</p>
         </div>
 
         <div class="sf-msg" id="waTplMsg"></div>
@@ -238,11 +249,12 @@
           Define os serviços que os clientes podem escolher ao agendar. <strong>Nome</strong> e <strong>duração</strong> são obrigatórios em cada linha.
         </p>
         <p class="sf-hint" style="margin-bottom:24px">
-          A <strong>descrição</strong> e o <strong>preço</strong> aparecem na secção «Serviços» do site e na marcação. Se preencheres um destes campos num serviço, preenche-o em todos — garante uma apresentação uniforme.
+          A <strong>cor</strong> só é usada na agenda do backoffice. A <strong>descrição</strong> e o <strong>preço</strong> aparecem na secção «Serviços» do site e na marcação. Se preencheres um destes campos num serviço, preenche-o em todos — garante uma apresentação uniforme.
         </p>
 
         <!-- Header (desktop) -->
         <div class="svc-grid-header">
+          <div title="Cor na agenda">Cor</div>
           <div>Nome *</div>
           <div>Duração (min) *</div>
           <div>Descrição</div>
@@ -657,27 +669,73 @@
   </main>
 
   <!-- Edit booking modal -->
-  <div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center">
-    <div style="background:var(--surface);border-radius:14px;padding:32px;width:340px;max-width:90vw;box-shadow:0 12px 40px rgba(0,0,0,.3)">
-      <h3 style="margin:0 0 20px;font-size:1.05rem;color:var(--text1)">Editar Marcação</h3>
-      <input type="hidden" id="editId">
+  <!-- ── Booking modal (create / edit) ─── -->
+  <div class="modal-overlay" id="bookingModal" hidden>
+    <form class="modal-card" id="bookingModalForm" novalidate>
+      <div class="modal-head">
+        <h3 id="bmTitle">Nova marcação</h3>
+        <button type="button" class="modal-x" data-close aria-label="Fechar">✕</button>
+      </div>
+      <input type="hidden" id="bmId">
       <div class="af-group">
-        <label for="editDate">Data</label>
-        <input type="date" id="editDate">
+        <label for="bmService">Serviço *</label>
+        <select id="bmService"></select>
       </div>
       <div class="af-group">
-        <label for="editTime">Hora</label>
-        <input type="time" id="editTime" step="900">
+        <label for="bmName">Nome do cliente *</label>
+        <input type="text" id="bmName" maxlength="100" autocomplete="off">
       </div>
-      <div id="editErr" style="color:#c0392b;font-size:.82rem;margin-bottom:12px;display:none"></div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
-        <button type="button" class="btn-outline" id="editCancelBtn">Cancelar</button>
-        <button type="button" class="btn-gold" id="editSaveBtn">Guardar</button>
+      <div class="bm-row">
+        <div class="af-group">
+          <label for="bmPhone">Telemóvel</label>
+          <input type="tel" id="bmPhone" maxlength="30" autocomplete="off">
+        </div>
+        <div class="af-group">
+          <label for="bmEmail">Email</label>
+          <input type="email" id="bmEmail" maxlength="160" autocomplete="off">
+        </div>
       </div>
+      <div class="bm-row">
+        <div class="af-group">
+          <label for="bmDate">Data *</label>
+          <input type="date" id="bmDate">
+        </div>
+        <div class="af-group">
+          <label for="bmTime">Hora *</label>
+          <input type="time" id="bmTime" step="300">
+        </div>
+      </div>
+      <div class="af-group">
+        <label for="bmMessage">Notas</label>
+        <textarea id="bmMessage" rows="2" maxlength="1000"></textarea>
+      </div>
+      <label class="bm-check" id="bmSendEmailWrap">
+        <input type="checkbox" id="bmSendEmail"> Enviar confirmação por email ao cliente
+      </label>
+      <p class="bm-meta" id="bmMeta"></p>
+      <div class="modal-err" id="bmErr" hidden></div>
+      <div class="modal-foot">
+        <div class="modal-foot-left">
+          <button type="button" class="btn-danger" id="bmDelete" hidden>Eliminar</button>
+          <a class="btn-wa" id="bmWhatsapp" target="_blank" rel="noopener" hidden>WhatsApp</a>
+        </div>
+        <div class="modal-foot-right">
+          <button type="button" class="btn-outline" data-close>Cancelar</button>
+          <button type="submit" class="btn-gold" id="bmSave">Guardar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Generic dialog (confirmations / notifications) ─── -->
+  <div class="modal-overlay" id="dialog" hidden>
+    <div class="modal-card modal-sm">
+      <h3 id="dlgTitle"></h3>
+      <div id="dlgBody" class="dlg-body"></div>
+      <div class="dlg-buttons" id="dlgButtons"></div>
     </div>
   </div>
 
   <script src="admin.js"></script>
-  <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
