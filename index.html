@@ -7,10 +7,13 @@
   <meta name="description" content="Intemporal Barbearia — Rua de Palme 277. Cortes clássicos e modernos, barba à navalha e acabamentos de detalhe. Marque a sua vez online.">
   <meta name="theme-color" content="#F7F7F5">
   <script>
-    // Theme before first paint: light by default, dark if the visitor chose it
+    // Theme before first paint: the visitor's own choice (toggle) wins,
+    // otherwise follow the device setting (prefers-color-scheme)
     (function () {
-      var t = 'light';
-      try { if (localStorage.getItem('theme') === 'dark') t = 'dark'; } catch (e) {}
+      var saved = null;
+      try { saved = localStorage.getItem('theme'); } catch (e) {}
+      var t = saved === 'dark' || saved === 'light' ? saved
+        : (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
       document.documentElement.setAttribute('data-theme', t);
     })();
   </script>
@@ -1461,9 +1464,17 @@
         apply(next);
         try { localStorage.setItem('theme', next); } catch (e) {}
       });
+
+      // Follow live device changes (e.g. automatic dark mode at night) unless the visitor chose a theme
+      const mq = window.matchMedia && matchMedia('(prefers-color-scheme: dark)');
+      if (mq) mq.addEventListener('change', e => {
+        let saved = null;
+        try { saved = localStorage.getItem('theme'); } catch (err) {}
+        if (!saved) apply(e.matches ? 'dark' : 'light');
+      });
     })();
 
-        /* ── Nav scroll ──────────────────────────────────── */
+    /* ── Nav scroll ──────────────────────────────────── */
     const nav = document.getElementById('nav');
     window.addEventListener('scroll', () => {
       nav.classList.toggle('scrolled', window.scrollY > 40);
