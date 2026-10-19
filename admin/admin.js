@@ -121,18 +121,15 @@ function businessHoursFrom(schedule) {
   return out.length ? out : false;
 }
 
-// Visible hours: at least 07:00–22:00, widened to fit the schedule
+// Visible hours: always 07:00–24:00 so the owner can book outside opening hours.
+// Starts earlier only if the schedule or an existing booking does (nothing gets hidden).
 function visibleRange(schedule) {
-  let min = 7 * 60, max = 22 * 60;
-  Object.values(schedule || {}).forEach(d => {
-    if (!d || !d.active) return;
-    [d.start1, d.start2].forEach(t => { if (t) { const [h, m] = t.split(':').map(Number); min = Math.min(min, h * 60 + m - 60); } });
-    [d.end1, d.end2].forEach(t => { if (t) { const [h, m] = t.split(':').map(Number); max = Math.max(max, h * 60 + m + 60); } });
-  });
+  let min = 7 * 60;
+  const earliest = t => { if (t) { const [h, m] = t.split(':').map(Number); min = Math.min(min, h * 60 + m); } };
+  Object.values(schedule || {}).forEach(d => { if (d && d.active) { earliest(d.start1); earliest(d.start2); } });
+  _agenda.bookings.forEach(b => earliest(b.time));
   min = Math.max(0, Math.floor(min / 60) * 60);
-  max = Math.min(24 * 60, Math.ceil(max / 60) * 60);
-  const t = m => `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}:00`;
-  return { slotMinTime: t(min), slotMaxTime: t(max) };
+  return { slotMinTime: `${pad2(min / 60)}:00:00`, slotMaxTime: '24:00:00' };
 }
 
 function initAgenda() {
@@ -244,6 +241,7 @@ async function fetchBookings() {
     _waData.bookings = _agenda.bookings;
     stateEl.style.display = 'none';
     renderWaPanel();
+    if (_agenda.calendar) _agenda.calendar.setOption('slotMinTime', visibleRange(_agenda.schedule).slotMinTime);
     _agenda.calendar?.refetchEvents();
   } catch (err) {
     stateEl.textContent = 'Erro ao carregar marcações: ' + err.message;
