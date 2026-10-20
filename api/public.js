@@ -21,7 +21,8 @@ module.exports = async function handler(req, res) {
     pipe.get('blockouts');
     const [settings, raw, blockouts] = await pipe.exec();
 
-    const bookings = (raw || []).map(b => (typeof b === 'string' ? JSON.parse(b) : b));
+    const bookings = (raw || []).map(b => (typeof b === 'string' ? JSON.parse(b) : b))
+      .filter(b => !(req.query.exclude && b.manageToken === req.query.exclude)); // booking being rescheduled
     const bookedSegments = SlotLogic.bookedSegmentsFor(bookings, date, (settings || {}).duration || 30)
       .map(({ start, end }) => ({ start, end, kind: 'booked' }));
     const blockedRanges = SlotLogic.blockedRangesFor(SlotLogic.ptToISO(date), blockouts);

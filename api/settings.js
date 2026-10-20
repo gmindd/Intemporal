@@ -17,6 +17,7 @@ module.exports = async function handler(req, res) {
         duration:          stored.duration          ?? 30,
         bookingEnabled:    stored.bookingEnabled    !== false,
         slotStep:          stored.slotStep          ?? 20,
+        rescheduleHours:   stored.rescheduleHours   ?? 24,
         address:           stored.address           ?? '',
         businessName:      stored.businessName      ?? '',
         serviceName:       stored.serviceName       ?? '',
@@ -52,6 +53,10 @@ module.exports = async function handler(req, res) {
     if (b.notifyContact  !== undefined) settings.notifyContact  = Boolean(b.notifyContact);
     if (b.bookingEnabled !== undefined) settings.bookingEnabled = Boolean(b.bookingEnabled);
     if (b.duration       !== undefined) settings.duration       = parseInt(b.duration, 10) || 30;
+    if (b.rescheduleHours !== undefined) {
+      const h = parseInt(b.rescheduleHours, 10);
+      settings.rescheduleHours = Number.isFinite(h) ? Math.min(336, Math.max(0, h)) : 24;
+    }
     if (b.slotStep       !== undefined) settings.slotStep       = Math.min(120, Math.max(5, parseInt(b.slotStep, 10) || 20));
     if (b.resendApiKey && b.resendApiKey.startsWith('re_')) {
       settings.resendApiKey = b.resendApiKey.trim();

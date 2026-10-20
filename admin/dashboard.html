@@ -500,6 +500,12 @@
           </div>
 
           <div class="sf-group">
+            <label for="sRescheduleHours">Remarcação online pelo cliente (horas de antecedência)</label>
+            <p class="sf-hint">Os emails de confirmação e de alteração levam um botão <strong>Remarcar</strong>: o cliente escolhe novo dia e hora, a marcação atual é cancelada e é criada uma nova. Define até quantas horas antes da marcação isto é possível (ex.: <strong>24</strong>). <strong>0</strong> desativa a remarcação online.</p>
+            <input type="number" id="sRescheduleHours" min="0" max="336" step="1" placeholder="24" style="padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.95rem;background:var(--cream);color:var(--text);outline:none;transition:border-color .2s;width:120px;">
+          </div>
+
+          <div class="sf-group">
             <label for="sAddress">Morada / Local das marcações</label>
             <p class="sf-hint">Endereço físico onde decorrem as marcações. Ao definir uma morada, as marcações serão adicionadas ao Google Calendar com este local em vez de uma videochamada Google Meet.</p>
             <input type="text" id="sAddress" placeholder="ex: Rua Exemplo 123, 1000-001 Lisboa" style="padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--fb);font-size:.95rem;background:var(--cream);color:var(--text);outline:none;transition:border-color .2s;max-width:480px;">

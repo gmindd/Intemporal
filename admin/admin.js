@@ -1144,6 +1144,7 @@ async function loadSettings() {
     document.getElementById('sBusinessEmail').value       = settings.businessEmail || '';
     document.getElementById('sBookingEnabled').checked     = settings.bookingEnabled !== false;
     document.getElementById('sSlotStep').value            = settings.slotStep      || '';
+    document.getElementById('sRescheduleHours').value     = settings.rescheduleHours ?? 24;
     document.getElementById('sAddress').value             = settings.address       || '';
     document.getElementById('sEmail').value              = settings.notificationEmail || '';
     document.getElementById('sNotifyBookings').checked   = settings.notifyBookings;
@@ -1209,6 +1210,7 @@ async function saveSettings(e) {
     businessEmail:     document.getElementById('sBusinessEmail').value.trim(),
     bookingEnabled:    document.getElementById('sBookingEnabled').checked,
     slotStep:          parseInt(document.getElementById('sSlotStep').value, 10) || 20,
+    rescheduleHours:   document.getElementById('sRescheduleHours').value === '' ? 24 : parseInt(document.getElementById('sRescheduleHours').value, 10),
     address:           document.getElementById('sAddress').value.trim(),
     notificationEmail: document.getElementById('sEmail').value.trim(),
     notifyBookings:    document.getElementById('sNotifyBookings').checked,

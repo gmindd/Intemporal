@@ -603,6 +603,16 @@
     .form-msg.ok { background: #EEF6EF; color: #1F6B3A; border: 1px solid #C4E2CB; display: block; }
     .form-msg.err { background: #FBEFEE; color: #9B2C24; border: 1px solid #F0C9C5; display: block; }
 
+    .resched-banner {
+      margin-bottom: 24px; padding: 16px 18px; border-radius: var(--r);
+      background: var(--paper); border: 1px solid var(--border); border-left: 3px solid var(--red-fill);
+      font-size: .9rem; color: var(--text2); line-height: 1.6;
+    }
+    .resched-banner strong { color: var(--ink); }
+    .resched-banner .resched-title { font-size: .66rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--accent-d); margin-bottom: 6px; }
+    .resched-banner.warn { border-left-color: #b7791f; }
+    .resched-banner button { margin-top: 8px; background: none; border: none; padding: 0; color: var(--accent-d); text-decoration: underline; cursor: pointer; font: inherit; font-size: .82rem; }
+
     .consent-box {
       margin: 4px 0 16px; padding: 14px 16px; background: var(--paper);
       border: 1px solid var(--border); border-radius: var(--r);
@@ -1033,6 +1043,7 @@
 
         <div class="booking-card reveal reveal-delay-1">
           <form id="bookingForm" novalidate>
+            <div class="resched-banner" id="reschedBanner" hidden></div>
 
             <!-- Service selector (shown only when services are configured) -->
             <div class="form-group" id="serviceGroup" style="display:none">
@@ -1621,12 +1632,15 @@
 
         if (pub?.services?.length) {
           renderServiceOptions(pub.services);
+          applyRescheduleService();
         }
         servicesLoaded = true;
       } catch {}
     })();
 
+    let publicServices = [];
     function renderServiceOptions(services) {
+      publicServices = services;
       const group = document.getElementById('serviceGroup');
       const opts  = document.getElementById('serviceOptions');
       if (!group || !opts) return;
@@ -1738,7 +1752,8 @@
         // Occupied time (bookings + blockouts) and the shop's current time (Lisbon)
         const [y2, mo2, d2] = val.split('-');
         const datePt = `${d2}/${mo2}/${y2}`;
-        const slotsRes = await fetch(`/api/slots?date=${encodeURIComponent(datePt)}`);
+        const excl = resched ? `&exclude=${encodeURIComponent(RESCHED_TOKEN)}` : '';
+        const slotsRes = await fetch(`/api/slots?date=${encodeURIComponent(datePt)}${excl}`);
         if (!slotsRes.ok) throw new Error();
         const occ = await slotsRes.json();
 
@@ -1831,6 +1846,7 @@
       try {
         const body = { name, email, phone, message, date: datePt, time };
         if (selectedServiceId) body.serviceId = selectedServiceId;
+        if (resched) body.rescheduleToken = RESCHED_TOKEN;
         const res = await fetch('/api/bookings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1840,7 +1856,10 @@
 
         if (res.ok) {
           msgEl.className = 'form-msg ok';
-          msgEl.textContent = `✓ Marcação confirmada para ${datePt} às ${time}. Receberá um email de confirmação em breve. Se não receber nos próximos minutos, verifique a pasta de spam.`;
+          msgEl.textContent = resched
+            ? `✓ Marcação remarcada para ${datePt} às ${time}. A marcação de ${resched.booking.date} às ${resched.booking.time} foi cancelada. Vai receber um email de confirmação.`
+            : `✓ Marcação confirmada para ${datePt} às ${time}. Receberá um email de confirmação em breve. Se não receber nos próximos minutos, verifique a pasta de spam.`;
+          if (resched) endReschedule();
           e.target.reset();
           document.getElementById('slotsGroup').style.display = 'none';
           selectedTime      = null;
@@ -1855,8 +1874,62 @@
       }
 
       btn.disabled = false;
-      btn.textContent = 'Confirmar Marcação';
+      btn.textContent = resched ? 'Confirmar remarcação' : 'Confirmar Marcação';
     });
+
+    /* ── Reschedule via email link (/?remarcar=<token>) ─ */
+    const RESCHED_TOKEN = new URLSearchParams(location.search).get('remarcar');
+    let resched = null; // { booking, hours } while rescheduling
+
+    function applyRescheduleService() {
+      if (!resched || !resched.booking.serviceId) return;
+      const svc = publicServices.find(x => x.id === resched.booking.serviceId);
+      const btn = document.querySelector(`.svc-option[data-id="${CSS.escape(resched.booking.serviceId)}"]`);
+      if (svc && btn) selectService(btn, svc);
+    }
+
+    function endReschedule() {
+      resched = null;
+      history.replaceState(null, '', location.pathname + location.hash);
+      document.getElementById('reschedBanner').hidden = true;
+      document.getElementById('bookingBtn').textContent = 'Confirmar Marcação';
+    }
+
+    (async () => {
+      if (!RESCHED_TOKEN) return;
+      const banner = document.getElementById('reschedBanner');
+      try {
+        const res = await fetch(`/api/bookings?manage=${encodeURIComponent(RESCHED_TOKEN)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Ligação inválida.');
+        const b = data.booking;
+        if (!data.allowed) {
+          banner.classList.add('warn');
+          banner.innerHTML = `<div class="resched-title">Remarcação</div>
+            A sua marcação de <strong>${esc2(b.service)}</strong> em <strong>${esc2(b.date)} às ${esc2(b.time)}</strong> mantém-se.<br>${esc2(data.reason)}${data.businessPhone ? ` Telefone: <strong>${esc2(data.businessPhone)}</strong>.` : ''}`;
+          banner.hidden = false;
+          return;
+        }
+        resched = data;
+        banner.classList.remove('warn');
+        banner.innerHTML = `<div class="resched-title">Remarcação</div>
+          Está a remarcar <strong>${esc2(b.service)}</strong> de <strong>${esc2(b.date)} às ${esc2(b.time)}</strong>.
+          Escolha o novo dia e hora — ao confirmar, a marcação atual é cancelada e substituída pela nova.<br>
+          <button type="button" id="reschedCancel">Não quero remarcar</button>`;
+        banner.hidden = false;
+        document.getElementById('reschedCancel').addEventListener('click', () => endReschedule());
+        document.getElementById('bName').value  = b.name  || '';
+        document.getElementById('bEmail').value = b.email || '';
+        document.getElementById('bPhone').value = b.phone || '';
+        document.getElementById('bookingBtn').textContent = 'Confirmar remarcação';
+        applyRescheduleService();
+      } catch (err) {
+        banner.classList.add('warn');
+        banner.innerHTML = `<div class="resched-title">Remarcação</div>${esc2(err.message)}`;
+        banner.hidden = false;
+      }
+      document.getElementById('agendamento').scrollIntoView();
+    })();
 
     /* ── Mouse parallax (dark sections) ─────────────── */
     document.addEventListener('mousemove', (e) => {

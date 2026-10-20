@@ -3,6 +3,7 @@ const { getAuthorizedClient, createCalendarEvent, updateCalendarEventTime, delet
 const { kv } = require('../lib/kv');
 const { Resend } = require('resend');
 const SlotLogic = require('../assets/js/slots.js');
+const crypto = require('crypto');
 
 // Sender address: must belong to a domain verified in your Resend account
 const EMAIL_FROM = process.env.EMAIL_FROM || 'noreply@slotbook.cc';
@@ -135,6 +136,58 @@ function resolveService(services, serviceId, settings) {
   }
   const duration = Number(settings.duration) || 30;
   return { id: '', label: settings.serviceName || `Marcação · ${duration} min`, duration, description: '', price: '' };
+}
+
+/* ── Online rescheduling ──────────────────────────────
+   Every booking gets a secret token; client emails carry a "Remarcar" link
+   (/?remarcar=<token>) that works until N hours before the appointment
+   (settings.rescheduleHours, 0 = disabled). Rescheduling cancels the
+   booking and creates a new one. */
+const newManageToken = () => crypto.randomBytes(18).toString('base64url');
+
+function rescheduleHours(settings) {
+  const h = Number(settings.rescheduleHours);
+  return Number.isFinite(h) && h >= 0 ? h : 24;
+}
+
+// Minutes from now (Lisbon time) until the booking starts
+function minutesUntil(booking) {
+  const abs = (datePt, min) => {
+    const [d, m, y] = datePt.split('/').map(Number);
+    return Date.UTC(y, m - 1, d) / 60000 + min;
+  };
+  const now = SlotLogic.lisbonNow();
+  return abs(booking.date, SlotLogic.toMin(booking.time)) - abs(now.datePt, now.min);
+}
+
+function rescheduleStatus(booking, settings) {
+  const hours = rescheduleHours(settings);
+  if (!hours) return { allowed: false, hours, reason: 'A remarcação online não está disponível. Por favor contacte-nos.' };
+  const left = minutesUntil(booking);
+  if (left <= 0) return { allowed: false, hours, reason: 'Esta marcação já passou.' };
+  if (left < hours * 60) {
+    return { allowed: false, hours, reason: `Só é possível remarcar online até ${hours} hora${hours === 1 ? '' : 's'} antes da marcação. Por favor contacte-nos.` };
+  }
+  return { allowed: true, hours };
+}
+
+function siteUrl(req) {
+  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, '');
+  const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
+  const host  = req.headers['x-forwarded-host'] || req.headers.host;
+  return `${proto}://${host}`;
+}
+
+function rescheduleBlock({ booking, settings, baseUrl }) {
+  const hours = rescheduleHours(settings);
+  if (!hours || !booking.manageToken || !baseUrl) return '';
+  const link = `${baseUrl}/?remarcar=${encodeURIComponent(booking.manageToken)}#agendamento`;
+  return `
+    <div style="margin-top:20px;padding:16px;border:1px solid #eee;border-radius:8px;text-align:center">
+      <p style="margin:0 0 12px;color:#666;font-size:.88rem">Precisa de mudar o dia ou a hora?</p>
+      <a href="${link}" style="display:inline-block;padding:11px 22px;background:#C00000;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;font-size:.9rem">Remarcar</a>
+      <p style="margin:10px 0 0;color:#999;font-size:.76rem">Pode remarcar online até ${hours} hora${hours === 1 ? '' : 's'} antes. A marcação atual é cancelada e substituída pela nova.</p>
+    </div>`;
 }
 
 function businessInfo(settings) {
@@ -271,7 +324,7 @@ async function removeGoogleEvent(booking) {
 }
 
 /* ── Emails ───────────────────────────────────────────── */
-async function sendAdminNotification({ settings, adminConfig, booking, svc }) {
+async function sendAdminNotification({ settings, adminConfig, booking, svc, previous }) {
   const resend = getResend(settings);
   const to = settings.notificationEmail || (adminConfig || {}).email;
   if (!resend || !to || settings.notifyBookings === false) return;
@@ -280,10 +333,13 @@ async function sendAdminNotification({ settings, adminConfig, booking, svc }) {
     await resend.emails.send({
       from:    `${info.businessName} <${EMAIL_FROM}>`,
       to,
-      subject: `📅 Nova marcação: ${booking.name} — ${booking.date} às ${booking.time}`,
+      subject: previous
+        ? `🔁 Remarcação: ${booking.name} — ${previous.date} ${previous.time} → ${booking.date} às ${booking.time}`
+        : `📅 Nova marcação: ${booking.name} — ${booking.date} às ${booking.time}`,
       html: `
         <div style="font-family:sans-serif;max-width:480px">
-          <h2 style="color:#B30000">Nova Marcação</h2>
+          <h2 style="color:#B30000">${previous ? 'Marcação remarcada pelo cliente' : 'Nova Marcação'}</h2>
+          ${previous ? `<p style="color:#666">Antes: <span style="text-decoration:line-through">${h(previous.date)} às ${h(previous.time)}</span> (cancelada)</p>` : ''}
           <table style="border-collapse:collapse;width:100%">
             <tr><td style="padding:4px 8px;color:#888">Nome</td><td style="padding:4px 8px"><strong>${h(booking.name)}</strong></td></tr>
             <tr><td style="padding:4px 8px;color:#888">Email</td><td style="padding:4px 8px">${h(booking.email || '—')}</td></tr>
@@ -302,7 +358,7 @@ async function sendAdminNotification({ settings, adminConfig, booking, svc }) {
   }
 }
 
-async function sendClientConfirmation({ settings, booking, svc }) {
+async function sendClientConfirmation({ settings, booking, svc, baseUrl, previous }) {
   const resend = getResend(settings);
   if (!resend || !booking.email) return false;
   const info = businessInfo(settings);
@@ -311,13 +367,16 @@ async function sendClientConfirmation({ settings, booking, svc }) {
     await resend.emails.send({
       from:    `${info.businessName} <${EMAIL_FROM}>`,
       to:      booking.email,
-      subject: `Marcação confirmada — ${booking.date} às ${booking.time}`,
+      subject: previous
+        ? `Marcação remarcada — ${booking.date} às ${booking.time}`
+        : `Marcação confirmada — ${booking.date} às ${booking.time}`,
       attachments: [attachment],
       html: `
         <div style="font-family:sans-serif;max-width:480px">
-          <h2 style="color:#B30000">Marcação Confirmada!</h2>
+          <h2 style="color:#B30000">${previous ? 'Marcação remarcada!' : 'Marcação Confirmada!'}</h2>
           <p>Olá <strong>${h(booking.name)}</strong>,</p>
-          <p>A tua marcação foi confirmada para <strong>${h(booking.date)} às ${h(booking.time)}</strong>.</p>
+          <p>A tua marcação foi ${previous ? 'remarcada' : 'confirmada'} para <strong>${h(booking.date)} às ${h(booking.time)}</strong>.</p>
+          ${previous ? `<p style="color:#999;font-size:.88rem">A marcação de ${h(previous.date)} às ${h(previous.time)} foi cancelada.</p>` : ''}
           <table style="border-collapse:collapse;width:100%;margin-top:12px">
             <tr><td style="padding:4px 8px;color:#888">Serviço</td><td style="padding:4px 8px"><strong>${h(booking.service)}</strong></td></tr>
             <tr><td style="padding:4px 8px;color:#888">Duração</td><td style="padding:4px 8px">${booking.serviceDuration} min</td></tr>
@@ -326,6 +385,7 @@ async function sendClientConfirmation({ settings, booking, svc }) {
           </table>
           ${locationBlock(info.address)}
           ${calendarButtons(googleUrl, outlookUrl)}
+          ${rescheduleBlock({ booking, settings, baseUrl })}
           <p style="margin-top:24px;color:#666">Até breve, <strong>${h(info.businessName)}</strong></p>
           ${emailFooter}
         </div>`,
@@ -337,7 +397,7 @@ async function sendClientConfirmation({ settings, booking, svc }) {
   }
 }
 
-async function sendRescheduleEmail({ settings, booking, oldDate, oldTime }) {
+async function sendRescheduleEmail({ settings, booking, oldDate, oldTime, baseUrl }) {
   const resend = getResend(settings);
   if (!resend || !booking.email) return false;
   const info = businessInfo(settings);
@@ -360,6 +420,7 @@ async function sendRescheduleEmail({ settings, booking, oldDate, oldTime }) {
           </table>
           ${locationBlock(info.address, 'Local')}
           ${calendarButtons(googleUrl, outlookUrl)}
+          ${rescheduleBlock({ booking, settings, baseUrl })}
           <p style="margin-top:20px;color:#666">Se o novo horário não lhe for conveniente, contacte-nos${info.businessPhone ? ` pelo <strong>${h(info.businessPhone)}</strong>` : ''}.</p>
           <p style="margin-top:16px;color:#666">Até breve, <strong>${h(info.businessName)}</strong></p>
           ${emailFooter}
@@ -378,6 +439,22 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // ── Lookup by reschedule token (public, from the email link) ──
+  if (req.method === 'GET' && req.query.manage) {
+    const pipe = kv.pipeline();
+    pipe.get('settings');
+    pipe.lrange('bookings', 0, MAX_BOOKINGS - 1);
+    const [settingsRaw, raw] = await pipe.exec();
+    const b = parseList(raw).find(x => x.manageToken && x.manageToken === String(req.query.manage));
+    if (!b) return res.status(404).json({ error: 'Esta ligação de remarcação já não é válida (a marcação pode ter sido alterada ou cancelada).' });
+    const status = rescheduleStatus(b, settingsRaw || {});
+    return res.status(200).json({
+      booking: { name: b.name, email: b.email, phone: b.phone, service: b.service, serviceId: b.serviceId, date: b.date, time: b.time },
+      ...status,
+      businessPhone: (settingsRaw || {}).businessPhone || '',
+    });
+  }
 
   // ── List (admin) ─────────────────────────────────────
   if (req.method === 'GET') {
@@ -402,7 +479,7 @@ module.exports = async function handler(req, res) {
     if (!name || !isDatePt(date) || !isTime(time)) {
       return res.status(400).json({ error: 'Nome, data e hora são obrigatórios.' });
     }
-    if (!isAdmin && !email) return res.status(400).json({ error: 'O email é obrigatório.' });
+    if (!isAdmin && !email && !body.rescheduleToken) return res.status(400).json({ error: 'O email é obrigatório.' });
     if (email && !isEmail(email)) return res.status(400).json({ error: 'Email inválido.' });
 
     const pipe = kv.pipeline();
@@ -415,8 +492,19 @@ module.exports = async function handler(req, res) {
     const [settingsRaw, servicesRaw, adminConfig, existingRaw, scheduleRaw, blockouts] = await pipe.exec();
     const settings = settingsRaw || {};
     const services = servicesRaw || [];
-    const existing = parseList(existingRaw);
+    let existing = parseList(existingRaw);
     const defaultDur = Number(settings.duration) || 30;
+
+    // Client rescheduling through the email link: the original booking is
+    // cancelled and replaced, so its time no longer counts as occupied.
+    let original = null;
+    if (!isAdmin && body.rescheduleToken) {
+      original = existing.find(b => b.manageToken && b.manageToken === String(body.rescheduleToken));
+      if (!original) return res.status(404).json({ error: 'Esta ligação de remarcação já não é válida.' });
+      const status = rescheduleStatus(original, settings);
+      if (!status.allowed) return res.status(403).json({ error: status.reason });
+      existing = existing.filter(b => b.id !== original.id);
+    }
 
     if (services.length && !services.some(s => s.id === serviceId)) {
       return res.status(400).json({ error: 'Por favor selecione um serviço.' });
@@ -445,28 +533,40 @@ module.exports = async function handler(req, res) {
 
     const booking = {
       id:              `${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
-      name, email, phone, message, date, time,
+      name,
+      email:           email || (original ? original.email : ''),
+      phone:           phone || (original ? original.phone : ''),
+      message, date, time,
       service:         svc.label,
       serviceId:       svc.id,
       serviceDuration: svc.duration,
       source:          isAdmin ? 'admin' : 'online',
+      manageToken:     newManageToken(),
       createdAt:       new Date().toISOString(),
     };
+    if (original) booking.rescheduledFrom = { date: original.date, time: original.time };
 
     const googleEventId = await createGoogleEvent({ settings, adminConfig, booking, svc });
     if (googleEventId) booking.googleEventId = googleEventId;
 
-    const writePipe = kv.pipeline();
-    writePipe.lpush('bookings', JSON.stringify(booking));
-    writePipe.ltrim('bookings', 0, MAX_BOOKINGS - 1);
-    await writePipe.exec();
+    if (original) {
+      await writeBookings([booking, ...existing]);   // drops the original
+      await removeGoogleEvent(original);
+    } else {
+      const writePipe = kv.pipeline();
+      writePipe.lpush('bookings', JSON.stringify(booking));
+      writePipe.ltrim('bookings', 0, MAX_BOOKINGS - 1);
+      await writePipe.exec();
+    }
 
+    const baseUrl = siteUrl(req);
+    const previous = original ? booking.rescheduledFrom : null;
     let emailSent = false;
     if (isAdmin) {
-      if (body.sendEmail && booking.email) emailSent = await sendClientConfirmation({ settings, booking, svc });
+      if (body.sendEmail && booking.email) emailSent = await sendClientConfirmation({ settings, booking, svc, baseUrl });
     } else {
-      await sendAdminNotification({ settings, adminConfig, booking, svc });
-      emailSent = await sendClientConfirmation({ settings, booking, svc });
+      await sendAdminNotification({ settings, adminConfig, booking, svc, previous });
+      emailSent = await sendClientConfirmation({ settings, booking, svc, baseUrl, previous });
     }
 
     return res.status(200).json({ ok: true, booking, emailSent });
@@ -530,6 +630,7 @@ module.exports = async function handler(req, res) {
     const moved = original.date !== updated.date || original.time !== updated.time
       || original.serviceDuration !== updated.serviceDuration;
     updated.updatedAt = new Date().toISOString();
+    if (!updated.manageToken) updated.manageToken = newManageToken();
     bookings[idx] = updated;
     await writeBookings(bookings);
 
@@ -537,7 +638,7 @@ module.exports = async function handler(req, res) {
     if (moved) {
       await moveGoogleEvent(updated, Boolean(body.notify));
       if (body.notify) {
-        emailSent = await sendRescheduleEmail({ settings, booking: updated, oldDate: original.date, oldTime: original.time });
+        emailSent = await sendRescheduleEmail({ settings, booking: updated, oldDate: original.date, oldTime: original.time, baseUrl: siteUrl(req) });
       }
     }
     return res.status(200).json({ ok: true, booking: updated, previous: { date: original.date, time: original.time }, emailSent });
