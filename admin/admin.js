@@ -1352,8 +1352,17 @@ function initGcalInstructions() {
 }
 
 /* ── Helpers ────────────────────────────────────────────── */
-function apiFetch(url, opts = {}) {
-  return fetch(url, { credentials: 'include', ...opts });
+let _sessionExpiredShown = false;
+
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(url, { credentials: 'include', ...opts });
+  // Session ended (e.g. dashboard left open for days): say so and go to login
+  if (res.status === 401 && url !== '/api/auth' && !_sessionExpiredShown) {
+    _sessionExpiredShown = true;
+    alert('A tua sessão expirou. Inicia sessão novamente — as alterações por guardar não foram gravadas.');
+    location.replace('/admin');
+  }
+  return res;
 }
 
 function esc(str) {
