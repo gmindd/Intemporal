@@ -1,6 +1,27 @@
 const { requireAdmin, checkPassword, createPasswordHash, clearCookieToken } = require('../lib/auth');
 const { kv } = require('../lib/kv');
 
+/* Colours chosen in the backoffice: the public site (light and dark theme) and
+   the backoffice itself ('admin'). Only valid #rrggbb values for known fields
+   are kept; an empty/missing field means "use the default". */
+const COLOR_FIELDS = {
+  light: ['paper', 'bone', 'surface', 'ink', 'text', 'text2', 'button', 'accent'],
+  dark:  ['paper', 'bone', 'surface', 'ink', 'text', 'text2', 'button', 'accent'],
+  admin: ['page', 'card', 'bar', 'title', 'text', 'text2', 'accent'],
+};
+function cleanColors(input) {
+  const out = {};
+  for (const [theme, fields] of Object.entries(COLOR_FIELDS)) {
+    const src = (input && typeof input[theme] === 'object' && input[theme]) || {};
+    const t = {};
+    for (const f of fields) {
+      if (typeof src[f] === 'string' && /^#[0-9a-fA-F]{6}$/.test(src[f])) t[f] = src[f].toLowerCase();
+    }
+    if (Object.keys(t).length) out[theme] = t;
+  }
+  return out;
+}
+
 module.exports = async function handler(req, res) {
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -30,6 +51,8 @@ module.exports = async function handler(req, res) {
         waTplToday:        stored.waTplToday        ?? '',
         waTplNext:         stored.waTplNext         ?? '',
         waTplChange:       stored.waTplChange       ?? '',
+        waTplConfirm:      stored.waTplConfirm      ?? '',
+        siteColors:        stored.siteColors        ?? {},
       },
     });
   }
@@ -44,7 +67,7 @@ module.exports = async function handler(req, res) {
       'notificationEmail', 'address', 'businessName', 'serviceName',
       'businessPhone', 'businessEmail',
       'socialFacebook', 'socialInstagram', 'socialYoutube', 'socialX',
-      'waTplToday', 'waTplNext', 'waTplChange',
+      'waTplToday', 'waTplNext', 'waTplChange', 'waTplConfirm',
     ];
     for (const f of STRING_FIELDS) {
       if (typeof b[f] === 'string') settings[f] = b[f].trim();
@@ -58,6 +81,7 @@ module.exports = async function handler(req, res) {
       settings.rescheduleHours = Number.isFinite(h) ? Math.min(336, Math.max(0, h)) : 24;
     }
     if (b.slotStep       !== undefined) settings.slotStep       = Math.min(120, Math.max(5, parseInt(b.slotStep, 10) || 20));
+    if (b.siteColors !== undefined) settings.siteColors = cleanColors(b.siteColors);
     if (b.resendApiKey && b.resendApiKey.startsWith('re_')) {
       settings.resendApiKey = b.resendApiKey.trim();
     }

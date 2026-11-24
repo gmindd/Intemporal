@@ -113,6 +113,51 @@ async function writeBookings(bookings) {
   await pipe.exec();
 }
 
+/* ── Manual confirmations ─────────────────────────────────
+   Hash 'confirmations': booking id → { status, at }.
+   status 'whatsapp' = confirmation sent by WhatsApp, 'skipped' = no message.
+   Bookings without an entry are listed as "por confirmar" in the backoffice. */
+const CONFIRMATIONS_KEY      = 'confirmations';
+const CONFIRMATION_STATUSES  = ['whatsapp', 'skipped'];
+
+/* Only bookings created from this moment on need a manual confirmation.
+   It is saved once (SET NX), on the first request after this feature goes
+   live, so bookings that already existed never show up as "por confirmar".
+   Any booking created later goes through POST, which runs this first. */
+const CONFIRMATIONS_SINCE_KEY = 'confirmations_since';
+let _confirmationsSince = null;
+
+async function confirmationsSince() {
+  if (_confirmationsSince) return _confirmationsSince;
+  try {
+    let since = await kv.get(CONFIRMATIONS_SINCE_KEY);
+    if (!since) {
+      await kv.set(CONFIRMATIONS_SINCE_KEY, new Date().toISOString(), { nx: true });
+      since = await kv.get(CONFIRMATIONS_SINCE_KEY);
+    }
+    if (since) _confirmationsSince = String(since);
+    return _confirmationsSince;
+  } catch (err) {
+    console.error('[bookings] início das confirmações:', err.message);
+    return null;
+  }
+}
+
+async function readConfirmations() {
+  // Never let this extra read break the agenda: on error, everything just shows as "por confirmar"
+  let raw = {};
+  try { raw = (await kv.hgetall(CONFIRMATIONS_KEY)) || {}; } catch (err) { console.error('[bookings] confirmações (ler):', err.message); }
+  const out = {};
+  for (const [id, v] of Object.entries(raw)) {
+    try { out[id] = typeof v === 'string' ? JSON.parse(v) : v; } catch { /* ignore malformed entry */ }
+  }
+  return out;
+}
+
+async function forgetConfirmation(id) {
+  try { await kv.hdel(CONFIRMATIONS_KEY, id); } catch (err) { console.error('[bookings] confirmação (apagar):', err.message); }
+}
+
 /* ── Helpers ──────────────────────────────────────────── */
 // Escape user-provided text before putting it in email HTML
 const h = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -440,6 +485,9 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // Make sure the confirmations start date exists before any booking is created or listed
+  const since = await confirmationsSince();
+
   // ── Lookup by reschedule token (public, from the email link) ──
   if (req.method === 'GET' && req.query.manage) {
     const pipe = kv.pipeline();
@@ -457,11 +505,16 @@ module.exports = async function handler(req, res) {
   }
 
   // ── List (admin) ─────────────────────────────────────
+  // Each booking carries its manual confirmation status (kept in a separate
+  // hash so marking a confirmation never rewrites the bookings list).
   if (req.method === 'GET') {
     const admin = await requireAdmin(req, res);
     if (!admin) return;
-    const bookings = (await readBookings()).reverse();
-    return res.status(200).json({ bookings });
+    const [bookings, confirmations] = await Promise.all([readBookings(), readConfirmations()]);
+    return res.status(200).json({
+      bookings: bookings.reverse().map(b => (confirmations[b.id] ? { ...b, confirmation: confirmations[b.id] } : b)),
+      confirmationsSince: since,
+    });
   }
 
   // ── Create ───────────────────────────────────────────
@@ -489,7 +542,8 @@ module.exports = async function handler(req, res) {
     pipe.lrange('bookings', 0, MAX_BOOKINGS - 1);
     pipe.get('schedule');
     pipe.get('blockouts');
-    const [settingsRaw, servicesRaw, adminConfig, existingRaw, scheduleRaw, blockouts] = await pipe.exec();
+    pipe.get('workdays');
+    const [settingsRaw, servicesRaw, adminConfig, existingRaw, scheduleRaw, blockouts, workdays] = await pipe.exec();
     const settings = settingsRaw || {};
     const services = servicesRaw || [];
     let existing = parseList(existingRaw);
@@ -525,7 +579,7 @@ module.exports = async function handler(req, res) {
         return res.status(403).json({ error: 'As marcações online estão desativadas.' });
       }
       const problem = SlotLogic.checkBookable({
-        schedule: scheduleRaw || SlotLogic.DEFAULT_SCHEDULE, blockouts, bookings: existing,
+        schedule: scheduleRaw || SlotLogic.DEFAULT_SCHEDULE, workdays, blockouts, bookings: existing,
         datePt: date, time, duration: svc.duration, defaultDur,
       });
       if (problem) return res.status(409).json({ error: problem });
@@ -552,6 +606,13 @@ module.exports = async function handler(req, res) {
     if (original) {
       await writeBookings([booking, ...existing]);   // drops the original
       await removeGoogleEvent(original);
+      // Same appointment moved by the client: an existing confirmation carries over
+      const confirmations = await readConfirmations();
+      if (confirmations[original.id]) {
+        try { await kv.hset(CONFIRMATIONS_KEY, { [booking.id]: JSON.stringify(confirmations[original.id]) }); }
+        catch (err) { console.error('[bookings] confirmação (copiar):', err.message); }
+      }
+      await forgetConfirmation(original.id);
     } else {
       const writePipe = kv.pipeline();
       writePipe.lpush('bookings', JSON.stringify(booking));
@@ -577,6 +638,24 @@ module.exports = async function handler(req, res) {
     if (!(await requireAdmin(req, res))) return;
     const body = req.body || {};
     if (!body.id) return res.status(400).json({ error: 'id em falta' });
+
+    // Manual confirmation (WhatsApp panel): only the confirmations hash is
+    // written, the booking itself is left untouched.
+    if (body.confirmation !== undefined) {
+      const status = body.confirmation;
+      if (status !== null && !CONFIRMATION_STATUSES.includes(status)) {
+        return res.status(400).json({ error: 'Estado de confirmação inválido.' });
+      }
+      const exists = (await readBookings()).some(b => b.id === body.id);
+      if (!exists) return res.status(404).json({ error: 'Marcação não encontrada' });
+      if (status === null) {
+        await forgetConfirmation(body.id);
+        return res.status(200).json({ ok: true, confirmation: null });
+      }
+      const confirmation = { status, at: new Date().toISOString() };
+      await kv.hset(CONFIRMATIONS_KEY, { [body.id]: JSON.stringify(confirmation) });
+      return res.status(200).json({ ok: true, confirmation });
+    }
 
     const pipe = kv.pipeline();
     pipe.get('settings');
@@ -654,6 +733,7 @@ module.exports = async function handler(req, res) {
     if (!target) return res.status(404).json({ error: 'Marcação não encontrada' });
     await writeBookings(bookings.filter(b => b.id !== id));
     await removeGoogleEvent(target);
+    await forgetConfirmation(id);
     return res.status(200).json({ ok: true });
   }
 

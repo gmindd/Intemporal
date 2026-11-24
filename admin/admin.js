@@ -108,6 +108,16 @@ function blockoutToEvent(bo) {
   return { start, end, display: 'background', classNames: ['agenda-blockout'], title: bo.label || 'Indisponível' };
 }
 
+// Exceptional working day → green background over its opening periods
+function workdayToEvents(w) {
+  return [[w.start1, w.end1], [w.start2, w.end2]]
+    .filter(([s, e]) => s && e && e > s)
+    .map(([s, e]) => ({
+      start: new Date(`${w.date}T${s}:00`), end: new Date(`${w.date}T${e}:00`),
+      display: 'background', classNames: ['agenda-workday'], title: w.label || 'Dia extra',
+    }));
+}
+
 function businessHoursFrom(schedule) {
   const DOW = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
   const out = [];
@@ -162,6 +172,7 @@ function initAgenda() {
     ...visibleRange(null),
     events: (info, success) => {
       const events = _agenda.bookings.map(bookingToEvent);
+      ((_agenda.schedule || {}).workdays || []).forEach(w => events.push(...workdayToEvents(w)));
       ((_agenda.schedule || {}).blockouts || []).forEach(bo => events.push(blockoutToEvent(bo)));
       success(events);
     },
@@ -236,9 +247,10 @@ async function fetchBookings() {
   try {
     const res = await apiFetch('/api/bookings');
     if (!res.ok) throw new Error('Erro ' + res.status);
-    const { bookings } = await res.json();
+    const { bookings, confirmationsSince } = await res.json();
     _agenda.bookings = bookings || [];
     _waData.bookings = _agenda.bookings;
+    _waData.confirmationsSince = confirmationsSince || null;
     stateEl.style.display = 'none';
     renderWaPanel();
     if (_agenda.calendar) _agenda.calendar.setOption('slotMinTime', visibleRange(_agenda.schedule).slotMinTime);
@@ -390,29 +402,59 @@ function fillServiceSelect(selectedId) {
   sel.innerHTML = opts.join('');
 }
 
-function openBookingModal({ booking, date }) {
+// Bookings created before the confirmations feature went live never need one
+function needsConfirmation(b) {
+  if (b.confirmation) return false;
+  const since = _waData.confirmationsSince;
+  if (!since) return true;
+  return Boolean(b.createdAt) && b.createdAt >= since;
+}
+
+// Short label for a booking's manual confirmation (WhatsApp panel); null = no label
+function confirmationLabel(b) {
+  const c = b.confirmation;
+  if (c && c.status === 'whatsapp') return { cls: 'done', text: 'Confirmação enviada por WhatsApp' };
+  if (c && c.status === 'skipped')  return { cls: 'done', text: 'Confirmada sem mensagem' };
+  return needsConfirmation(b) ? { cls: 'pending', text: 'Por confirmar' } : null;
+}
+
+/**
+ * Opens the booking modal.
+ *  - { booking }  edit an existing booking
+ *  - { date }     new booking at that date/time
+ *  - { client }   new booking for the same client: name, phone, email and
+ *                 service are copied, date and time are left for the owner
+ */
+function openBookingModal({ booking, date, client }) {
   const modal = document.getElementById('bookingModal');
   const isEdit = Boolean(booking);
-  const b = booking || {};
+  const b = booking || client || {};
   const d = date || new Date();
 
-  document.getElementById('bmTitle').textContent = isEdit ? 'Editar marcação' : 'Nova marcação';
-  document.getElementById('bmId').value = b.id || '';
+  document.getElementById('bmTitle').textContent = isEdit ? 'Editar marcação' : client ? `Nova marcação · ${b.name}` : 'Nova marcação';
+  document.getElementById('bmId').value = isEdit ? b.id : '';
   fillServiceSelect(b.serviceId || '');
   document.getElementById('bmName').value    = b.name    || '';
   document.getElementById('bmPhone').value   = b.phone   || '';
   document.getElementById('bmEmail').value   = b.email   || '';
-  document.getElementById('bmMessage').value = b.message || '';
-  document.getElementById('bmDate').value    = isEdit ? ptToIso(b.date) : isoDate(d);
-  document.getElementById('bmTime').value    = isEdit ? b.time : hhmm(d);
+  document.getElementById('bmMessage').value = isEdit ? (b.message || '') : '';
+  document.getElementById('bmDate').value    = isEdit ? ptToIso(b.date) : client ? '' : isoDate(d);
+  document.getElementById('bmTime').value    = isEdit ? b.time : client ? '' : hhmm(d);
   document.getElementById('bmSendEmail').checked = false;
   document.getElementById('bmSendEmailWrap').hidden = isEdit;
   document.getElementById('bmDelete').hidden = !isEdit;
+  document.getElementById('bmNext').hidden = !isEdit;
 
   const meta = document.getElementById('bmMeta');
-  meta.textContent = isEdit
-    ? `${b.source === 'admin' ? 'Criada no backoffice' : 'Marcação online'}${b.createdAt ? ' · ' + new Date(b.createdAt).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' }) : ''}`
-    : 'Só o nome e o serviço são obrigatórios — os contactos são opcionais.';
+  if (isEdit) {
+    const conf = confirmationLabel(b);
+    meta.innerHTML = `${b.source === 'admin' ? 'Criada no backoffice' : 'Marcação online'}${b.createdAt ? ' · ' + esc(new Date(b.createdAt).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' })) : ''}`
+      + (conf ? `<span class="bm-confirm-state ${conf.cls}">${conf.text}</span>` : '');
+  } else {
+    meta.textContent = client
+      ? `Dados de ${b.name} já preenchidos. Escolhe a data e a hora da próxima marcação.`
+      : 'Só o nome e o serviço são obrigatórios — os contactos são opcionais.';
+  }
 
   const wa = document.getElementById('bmWhatsapp');
   const digits = isEdit ? waPhoneDigits(b.phone) : '';
@@ -422,7 +464,8 @@ function openBookingModal({ booking, date }) {
   const err = document.getElementById('bmErr');
   err.hidden = true;
   modal.hidden = false;
-  setTimeout(() => document.getElementById(isEdit ? 'bmName' : (_agenda.services.length ? 'bmService' : 'bmName')).focus(), 30);
+  const focusId = isEdit ? 'bmName' : client ? 'bmDate' : (_agenda.services.length ? 'bmService' : 'bmName');
+  setTimeout(() => document.getElementById(focusId).focus(), 30);
 }
 
 function closeBookingModal() { document.getElementById('bookingModal').hidden = true; }
@@ -438,6 +481,15 @@ function initBookingModal() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && !modal.hidden && document.getElementById('dialog').hidden) closeBookingModal();
   });
+  // New booking for the client of the booking being edited
+  document.getElementById('bmNext').addEventListener('click', () => {
+    const id = document.getElementById('bmId').value;
+    const b = _agenda.bookings.find(x => x.id === id);
+    if (!b) return;
+    const serviceId = _agenda.services.some(s => s.id === b.serviceId) ? b.serviceId : '';
+    openBookingModal({ client: { name: b.name, phone: b.phone, email: b.email, serviceId } });
+  });
+
   // The email confirmation checkbox only makes sense with an email
   document.getElementById('bmEmail').addEventListener('input', e => {
     const box = document.getElementById('bmSendEmail');
@@ -520,11 +572,13 @@ function initBookingModal() {
 const WA_TPL_TODAY_DEFAULT = 'Olá {nome}! 👋 Lembramos a sua marcação de hoje às {hora} — {servico} — em {negocio}, {morada}. Até já!';
 const WA_TPL_CHANGE_DEFAULT = 'Olá {nome}! ⚠️ A sua marcação de {servico} em {negocio} foi alterada: {data_antiga} às {hora_antiga} → {data} às {hora}. Se não lhe for conveniente, responda a esta mensagem ou contacte-nos: {telefone}. Obrigado!';
 const WA_TPL_NEXT_DEFAULT  = 'Olá {nome}! 👋 Lembramos a sua marcação de {servico} no dia {data} às {hora} em {negocio}, {morada}. Qualquer questão contacte-nos: {telefone}. Até breve!';
+const WA_TPL_CONFIRM_DEFAULT = 'Olá {nome}! ✅ A sua marcação de {servico} em {negocio} está confirmada para {data} às {hora}. Morada: {morada}. Se precisar de alterar, contacte-nos: {telefone}. Até breve!';
 
 const _waData = { bookings: null, schedule: null, settings: null };
 
 function initWhatsapp() {
   document.getElementById('waRefreshBtn')?.addEventListener('click', fetchBookings);
+  document.getElementById('waTplConfirm')?.addEventListener('input', renderWaConfirm);
 
   // Rebuild the wa.me links live as the templates are edited
   document.getElementById('waTplToday')?.addEventListener('input', renderWaPanel);
@@ -545,6 +599,7 @@ function initWhatsapp() {
           waTplToday: document.getElementById('waTplToday').value,
           waTplNext:  document.getElementById('waTplNext').value,
           waTplChange: document.getElementById('waTplChange').value,
+          waTplConfirm: document.getElementById('waTplConfirm').value,
         }),
       });
       if (!res.ok) throw new Error('Erro ' + res.status);
@@ -567,11 +622,13 @@ function waDateKey(d) {
 
 function waIsWorkingDay(d) {
   const KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+  const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // An exceptional working day counts even when the weekday is normally closed
+  const extra = ((_waData.schedule || {}).workdays || []).some(w => w.date === iso);
   const day  = (_waData.schedule || {})[KEYS[d.getDay()]];
-  if (!day || !day.active || (!day.start1 && !day.start2)) return false;
+  if (!extra && (!day || !day.active || (!day.start1 && !day.start2))) return false;
 
   // Skip days fully covered by a blockout (no partial times on the boundary days)
-  const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const fullDayBlocked = ((_waData.schedule || {}).blockouts || []).some(b =>
     iso >= b.startDate && iso <= b.endDate &&
     (iso > b.startDate || !b.startTime) &&
@@ -672,6 +729,110 @@ function renderWaPanel() {
   const all = _waData.bookings;
   waRenderList(document.getElementById('waTodayList'), all.filter(b => b.date === todayKey), tplToday);
   waRenderList(document.getElementById('waNextList'),  nextKey ? all.filter(b => b.date === nextKey) : [], tplNext);
+  renderWaConfirm();
+}
+
+/* ── Pending confirmations ("Por confirmar") ─────────────── */
+let _waLastAction = null; // { id, name } of the last booking taken off the list (for "Desfazer")
+
+// Future bookings made since the confirmations feature went live and not yet confirmed, soonest first
+function waPendingConfirmations() {
+  const now = new Date();
+  return (_waData.bookings || [])
+    .filter(b => needsConfirmation(b) && new Date(`${ptToIso(b.date)}T${b.time}:00`) >= now)
+    .sort((a, b) => (ptToIso(a.date) + a.time).localeCompare(ptToIso(b.date) + b.time));
+}
+
+function renderWaPendingBadge(count) {
+  const badge = document.getElementById('waPendingBadge');
+  if (!badge) return;
+  badge.textContent = count > 99 ? '99+' : String(count);
+  badge.hidden = !count;
+}
+
+function renderWaConfirm() {
+  const card = document.getElementById('waConfirmCard');
+  const list = document.getElementById('waConfirmList');
+  if (!card || !list || !_waData.bookings || !_waData.settings) return;
+
+  const pending = waPendingConfirmations();
+  renderWaPendingBadge(pending.length);
+  card.style.display = '';
+  document.getElementById('waConfirmCount').textContent = `· ${pending.length}`;
+  const sinceEl = document.getElementById('waConfirmSince');
+  if (sinceEl && _waData.confirmationsSince) {
+    sinceEl.textContent = new Date(_waData.confirmationsSince).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' });
+  }
+
+  const tpl = document.getElementById('waTplConfirm')?.value || WA_TPL_CONFIRM_DEFAULT;
+  const DAY_NAMES = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+  list.innerHTML = '';
+
+  if (_waLastAction) {
+    const undo = document.createElement('div');
+    undo.className = 'wa-empty';
+    const how = _waLastAction.status === 'whatsapp' ? 'confirmada por WhatsApp' : 'confirmada sem mensagem';
+    undo.className = 'wa-done-note';
+    undo.innerHTML = `✓ <strong>${esc(_waLastAction.name)}</strong> (${esc(_waLastAction.when)}) ficou ${how} e saiu desta lista. A marcação continua na agenda. <button type="button" class="color-row-reset" id="waUndo">Desfazer</button>`;
+    undo.querySelector('#waUndo').addEventListener('click', () => setConfirmation(_waLastAction.id, null));
+    list.appendChild(undo);
+  }
+
+  if (!pending.length) {
+    list.insertAdjacentHTML('beforeend', '<div class="wa-empty">Não há marcações por confirmar.</div>');
+    return;
+  }
+
+  let lastDate = null;
+  pending.forEach(b => {
+    if (b.date !== lastDate) {
+      lastDate = b.date;
+      const [d, m, y] = b.date.split('/').map(Number);
+      list.insertAdjacentHTML('beforeend', `<div class="wa-confirm-day">${DAY_NAMES[new Date(y, m - 1, d).getDay()]}, ${esc(b.date)}</div>`);
+    }
+    const item = document.createElement('div');
+    item.className = 'wa-item wa-confirm-item';
+    const digits = waPhoneDigits(b.phone);
+    item.innerHTML = `
+      <div class="wa-item-info">
+        <div class="wa-confirm-when">${esc(b.time)} · ${esc(b.name)}</div>
+        <div class="wa-item-svc">${esc(b.service || '—')}${b.source === 'admin' ? ' · criada no backoffice' : ' · marcação online'}</div>
+        ${b.phone ? `<div class="wa-item-phone">${esc(b.phone)}</div>` : '<div class="wa-item-phone">Sem telemóvel</div>'}
+      </div>
+      <div class="wa-confirm-actions">
+        ${digits ? `<a class="wa-send-btn" data-act="whatsapp" target="_blank" rel="noopener"
+             href="https://wa.me/${digits}?text=${encodeURIComponent(waFillTemplate(tpl, b))}">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+             Enviar confirmação por WhatsApp</a>` : ''}
+        <button type="button" class="wa-skip-btn" data-act="skipped">Não enviar mensagem de confirmação</button>
+      </div>`;
+    // The WhatsApp link opens in a new tab as usual; the booking is then marked as confirmed
+    item.querySelectorAll('[data-act]').forEach(el => el.addEventListener('click', () => {
+      item.querySelectorAll('[data-act]').forEach(x => x.classList.add('busy'));
+      setConfirmation(b.id, el.dataset.act);
+    }));
+    list.appendChild(item);
+  });
+}
+
+async function setConfirmation(id, status) {
+  const b = (_waData.bookings || []).find(x => x.id === id);
+  try {
+    const res = await apiFetch('/api/bookings', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, confirmation: status }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
+    if (b) {
+      if (data.confirmation) b.confirmation = data.confirmation;
+      else delete b.confirmation;
+    }
+    _waLastAction = status && b ? { id, status, name: b.name, when: `${b.date.slice(0, 5)} às ${b.time}` } : null;
+  } catch (err) {
+    await askDialog({ title: 'Erro', html: `<p>Não foi possível guardar: ${esc(err.message)}</p>`, buttons: [{ label: 'Fechar', cls: 'btn-gold' }] });
+  }
+  renderWaConfirm();
 }
 
 /* ── Schedule + Blockouts ───────────────────────────────── */
@@ -685,9 +846,11 @@ async function loadSchedule() {
     renderWaPanel();
     applyScheduleToGrid(data);
     renderBlockouts(data.blockouts || []);
+    renderWorkdays(data.workdays || []);
   } catch {
     // use defaults already in DOM
   }
+  initWorkdayForm();
 
   document.querySelectorAll('.sched-row').forEach(row => {
     const toggle = row.querySelector('.sg-active');
@@ -801,10 +964,7 @@ function renderBlockouts(blockouts) {
 async function deleteBlockout(id) {
   try {
     const res = await apiFetch(`/api/schedule?blockouts=1&id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-    if (res.ok) {
-      const data = await (await fetch('/api/schedule')).json();
-      renderBlockouts(data.blockouts || []);
-    }
+    if (res.ok) await refreshSchedule();
   } catch (err) {
     alert('Erro ao remover: ' + err.message);
   }
@@ -844,8 +1004,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (res.ok) {
         msgEl.className = 'sf-msg ok'; msgEl.textContent = 'Adicionado.';
         e.target.reset();
-        const data = await (await fetch('/api/schedule')).json();
-        renderBlockouts(data.blockouts || []);
+        await refreshSchedule();
       } else {
         const d = await res.json(); throw new Error(d.error || 'Erro ' + res.status);
       }
@@ -856,6 +1015,246 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+
+/* ── Exceptional working days ───────────────────────────── */
+const WD_WEEKDAYS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+
+function renderWorkdays(workdays) {
+  const el = document.getElementById('workdaysList');
+  if (!el) return;
+  if (!workdays.length) {
+    el.innerHTML = '<p style="color:var(--text3);font-size:.88rem;margin:0">Nenhum dia de trabalho excecional definido.</p>';
+    return;
+  }
+  const todayIso = isoDate(new Date());
+  el.innerHTML = '';
+  workdays.forEach(w => {
+    const [y, m, d] = w.date.split('-').map(Number);
+    const hours = [w.start1 && w.end1 ? `${w.start1} às ${w.end1}` : '', w.start2 && w.end2 ? `${w.start2} às ${w.end2}` : ''].filter(Boolean).join(' e ');
+    const row = document.createElement('div');
+    row.className = 'wd-row' + (w.date < todayIso ? ' past' : '');
+    row.innerHTML = `
+      <div>
+        <div class="wd-row-title">${esc(w.label || 'Dia de trabalho excecional')}</div>
+        <div class="wd-row-sub">${WD_WEEKDAYS[new Date(y, m - 1, d).getDay()]}, ${pad2(d)}/${pad2(m)}/${y} · ${esc(hours)}${w.date < todayIso ? ' · já passou' : ''}</div>
+      </div>
+      <button type="button" class="btn-danger" style="padding:5px 12px;font-size:.8rem;flex-shrink:0">Remover</button>`;
+    row.querySelector('button').addEventListener('click', () => deleteWorkday(w));
+    el.appendChild(row);
+  });
+}
+
+// Reload the schedule everywhere it is used (agenda, WhatsApp panel, lists)
+async function refreshSchedule() {
+  const data = await (await fetch('/api/schedule')).json();
+  _waData.schedule = data;
+  _agenda.schedule = data;
+  applyScheduleToAgenda();
+  renderWaPanel();
+  renderBlockouts(data.blockouts || []);
+  renderWorkdays(data.workdays || []);
+}
+
+async function deleteWorkday(w) {
+  const ok = await askDialog({
+    title: 'Remover dia de trabalho excecional?',
+    html: `<p>${esc(w.label || 'Dia de trabalho excecional')} · ${esc(isoToPt(w.date))}</p><p class="dlg-hint">Deixam de ser aceites novas marcações online neste dia, se for um dia de folga. As marcações já feitas não são apagadas.</p>`,
+    buttons: [{ label: 'Cancelar' }, { label: 'Remover', value: true, cls: 'btn-danger' }],
+  });
+  if (!ok) return;
+  try {
+    const res = await apiFetch(`/api/schedule?workdays=1&id=${encodeURIComponent(w.id)}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Erro ${res.status}`);
+    await refreshSchedule();
+  } catch (err) {
+    await askDialog({ title: 'Erro', html: `<p>${esc(err.message)}</p>`, buttons: [{ label: 'Fechar', cls: 'btn-gold' }] });
+  }
+}
+
+function initWorkdayForm() {
+  const form = document.getElementById('workdayForm');
+  if (!form || form._bound) return;
+  form._bound = true;
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn   = document.getElementById('addWorkdayBtn');
+    const msgEl = document.getElementById('wdMsg');
+    const val = id => document.getElementById(id).value.trim();
+    const body = { label: val('wdLabel'), date: val('wdDate'), start1: val('wdStart1'), end1: val('wdEnd1'), start2: val('wdStart2'), end2: val('wdEnd2') };
+    const fail = m => { msgEl.className = 'sf-msg err'; msgEl.textContent = m; };
+    if (!body.date) return fail('Indica a data.');
+    if (!body.start1 || !body.end1 || body.end1 <= body.start1) return fail('O período 1 é obrigatório e a hora de fim tem de ser depois da de início.');
+    if ((body.start2 || body.end2) && (!body.start2 || !body.end2 || body.end2 <= body.start2 || body.start2 < body.end1)) {
+      return fail('O período 2 tem de ter início e fim e começar depois do período 1.');
+    }
+    const existing = ((_agenda.schedule || {}).workdays || []).find(w => w.date === body.date);
+    if (existing) {
+      const ok = await askDialog({
+        title: 'Substituir este dia?',
+        html: `<p>Já existe um dia de trabalho excecional em ${esc(isoToPt(body.date))}. Queres substituí-lo pelo novo horário?</p>`,
+        buttons: [{ label: 'Cancelar' }, { label: 'Substituir', value: true, cls: 'btn-gold' }],
+      });
+      if (!ok) return;
+    }
+
+    btn.disabled = true; btn.textContent = 'A guardar…';
+    msgEl.className = 'sf-msg'; msgEl.textContent = '';
+    try {
+      const res = await apiFetch('/api/schedule?workdays=1', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Erro ${res.status}`);
+      msgEl.className = 'sf-msg ok'; msgEl.textContent = 'Dia adicionado.';
+      document.getElementById('wdLabel').value = '';
+      document.getElementById('wdDate').value = '';
+      await refreshSchedule();
+    } catch (err) {
+      fail(err.message);
+    }
+    btn.disabled = false; btn.textContent = '+ Adicionar dia';
+  });
+}
+
+/* ── Site colours ───────────────────────────────────────── */
+// Defaults must match the theme tokens in index.html
+const COLOR_DEFS = [
+  { key: 'paper',   label: 'Fundo da página',          hint: 'Cor de fundo principal do site',                    light: '#f7f7f5', dark: '#0b0b0b' },
+  { key: 'bone',    label: 'Fundo das secções alternadas', hint: 'Faixas como Marcações e Serviços',              light: '#ececea', dark: '#131313' },
+  { key: 'surface', label: 'Cartões e caixas',         hint: 'Formulário de marcação e cartões dos serviços',     light: '#ffffff', dark: '#161616' },
+  { key: 'ink',     label: 'Títulos',                  hint: 'Títulos e botões escuros',                          light: '#0b0b0b', dark: '#f4f4f2' },
+  { key: 'text',    label: 'Texto',                    hint: 'Texto principal',                                   light: '#161616', dark: '#e9e9e7' },
+  { key: 'text2',   label: 'Texto secundário',         hint: 'Descrições e notas',                                light: '#4a4a48', dark: '#b5b5b2' },
+  { key: 'button',  label: 'Botões',                   hint: 'Botões principais e horário escolhido',             light: '#c00000', dark: '#c00000' },
+  { key: 'accent',  label: 'Destaques',                hint: 'Palavras em itálico, etiquetas e links',            light: '#c00000', dark: '#e0454a' },
+];
+// Backoffice colours (single theme). Defaults must match :root in admin.css
+const ADMIN_COLOR_DEFS = [
+  { key: 'page',   label: 'Fundo da página',          hint: 'Fundo de todas as páginas do backoffice',    admin: '#faf7f2' },
+  { key: 'card',   label: 'Caixas e cartões',         hint: 'Fundo das caixas de configuração e janelas', admin: '#f2ebe0' },
+  { key: 'bar',    label: 'Barra do topo e menu',     hint: 'Com uma cor clara, o texto do menu passa a escuro', admin: '#0d0c0a' },
+  { key: 'title',  label: 'Títulos',                  hint: 'Títulos das secções (Agenda, Horário…)',     admin: '#0d0c0a' },
+  { key: 'text',   label: 'Texto',                    hint: 'Texto principal',                            admin: '#1a1612' },
+  { key: 'text2',  label: 'Texto secundário',         hint: 'Ajudas e descrições',                        admin: '#4a4238' },
+  { key: 'accent', label: 'Botões e destaques',       hint: 'Botões principais, separador ativo, contador', admin: '#b30000' },
+];
+const THEMES = ['light', 'dark', 'admin'];
+const THEME_NAMES = { light: 'Site · modo claro', dark: 'Site · modo escuro', admin: 'Backoffice' };
+const emptyColors = () => ({ light: {}, dark: {}, admin: {} });
+const _colors = { saved: emptyColors(), edit: emptyColors(), theme: 'light', bound: false };
+
+const defsFor = theme => (theme === 'admin' ? ADMIN_COLOR_DEFS : COLOR_DEFS);
+
+function colorValue(theme, key) {
+  const def = defsFor(theme).find(d => d.key === key);
+  return _colors.edit[theme][key] || def[theme];
+}
+
+function renderColorFields() {
+  const wrap = document.getElementById('colorsFields');
+  if (!wrap) return;
+  const theme = _colors.theme;
+  wrap.innerHTML = '';
+  defsFor(theme).forEach(def => {
+    const row = document.createElement('div');
+    row.className = 'color-row';
+    const custom = Boolean(_colors.edit[theme][def.key]);
+    row.innerHTML = `
+      <input type="color" value="${colorValue(theme, def.key)}" aria-label="${esc(def.label)}">
+      <div class="color-row-label">${esc(def.label)}<small>${esc(def.hint)}</small></div>
+      <button type="button" class="color-row-reset${custom ? '' : ' is-default'}">Original</button>`;
+    const input = row.querySelector('input');
+    const reset = row.querySelector('button');
+    input.addEventListener('input', () => {
+      if (input.value.toLowerCase() === def[theme]) delete _colors.edit[theme][def.key];
+      else _colors.edit[theme][def.key] = input.value.toLowerCase();
+      reset.classList.toggle('is-default', !_colors.edit[theme][def.key]);
+      renderColorPreview();
+    });
+    reset.addEventListener('click', () => {
+      delete _colors.edit[theme][def.key];
+      input.value = def[theme];
+      reset.classList.add('is-default');
+      renderColorPreview();
+    });
+    wrap.appendChild(row);
+  });
+  renderColorPreview();
+}
+
+function renderColorPreview() {
+  const box = document.getElementById('colorsPreview');
+  if (!box) return;
+  const theme = _colors.theme;
+  box.dataset.mode = theme === 'admin' ? 'admin' : 'site';
+  if (theme !== 'admin') {
+    COLOR_DEFS.forEach(def => box.style.setProperty(`--cp-${def.key}`, colorValue(theme, def.key)));
+    return;
+  }
+  const v = key => colorValue('admin', key);
+  const lum = hex => { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255; };
+  const lightBar = lum(v('bar')) > 0.6;
+  box.style.setProperty('--ap-page', v('page'));
+  box.style.setProperty('--ap-card', v('card'));
+  box.style.setProperty('--ap-bar', v('bar'));
+  box.style.setProperty('--ap-bar2', v('bar'));
+  box.style.setProperty('--ap-bar-fg', lightBar ? v('title') : '#ffffff');
+  box.style.setProperty('--ap-bar-fg2', lightBar ? 'rgba(0,0,0,.5)' : 'rgba(255,255,255,.45)');
+  box.style.setProperty('--ap-title', v('title'));
+  box.style.setProperty('--ap-text', v('text'));
+  box.style.setProperty('--ap-text2', v('text2'));
+  box.style.setProperty('--ap-accent', v('accent'));
+}
+
+// Copy of the saved colours, with every theme present
+const cloneColors = c => Object.fromEntries(THEMES.map(t => [t, { ...((c || {})[t] || {}) }]));
+
+function initSiteColors(saved) {
+  _colors.saved = cloneColors(saved);
+  _colors.edit  = cloneColors(saved);
+  // Keep this browser's copy of the backoffice colours in sync with the server
+  window.applyAdminColors?.(_colors.saved.admin);
+  window.rememberAdminColors?.(_colors.saved.admin);
+  renderColorFields();
+  if (_colors.bound) return;
+  _colors.bound = true;
+
+  document.querySelectorAll('.cts-btn').forEach(btn => btn.addEventListener('click', () => {
+    _colors.theme = btn.dataset.theme;
+    document.querySelectorAll('.cts-btn').forEach(b => b.classList.toggle('active', b === btn));
+    renderColorFields();
+  }));
+
+  const msgEl = document.getElementById('colorsMsg');
+  // Resets only the tab being edited (site light / site dark / backoffice)
+  document.getElementById('colorsResetBtn')?.addEventListener('click', () => {
+    _colors.edit[_colors.theme] = {};
+    renderColorFields();
+    msgEl.className = 'sf-msg';
+    msgEl.textContent = `Cores originais repostas em «${THEME_NAMES[_colors.theme]}». Carrega em «Guardar cores» para aplicar.`;
+  });
+
+  document.getElementById('colorsSaveBtn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('colorsSaveBtn');
+    btn.disabled = true; btn.textContent = 'A guardar…';
+    msgEl.className = 'sf-msg'; msgEl.textContent = '';
+    try {
+      const res = await apiFetch('/api/settings', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteColors: _colors.edit }),
+      });
+      if (!res.ok) throw new Error('Erro ' + res.status);
+      _colors.saved = cloneColors(_colors.edit);
+      window.applyAdminColors?.(_colors.saved.admin);
+      window.rememberAdminColors?.(_colors.saved.admin);
+      msgEl.className = 'sf-msg ok';
+      msgEl.textContent = 'Cores guardadas. Já estão aplicadas no site e no backoffice.';
+    } catch (err) {
+      msgEl.className = 'sf-msg err';
+      msgEl.textContent = 'Erro ao guardar: ' + err.message;
+    }
+    btn.disabled = false; btn.textContent = 'Guardar cores';
+  });
+}
 
 /* ── Services ───────────────────────────────────────────── */
 async function loadServices() {
@@ -1161,6 +1560,9 @@ async function loadSettings() {
     if (tplNextEl)  tplNextEl.value  = settings.waTplNext  || WA_TPL_NEXT_DEFAULT;
     const tplChangeEl = document.getElementById('waTplChange');
     if (tplChangeEl) tplChangeEl.value = settings.waTplChange || WA_TPL_CHANGE_DEFAULT;
+    const tplConfirmEl = document.getElementById('waTplConfirm');
+    if (tplConfirmEl) tplConfirmEl.value = settings.waTplConfirm || WA_TPL_CONFIRM_DEFAULT;
+    initSiteColors(settings.siteColors || {});
     renderWaPanel();
 
     const resendStatus = document.getElementById('sResendKeyStatus');

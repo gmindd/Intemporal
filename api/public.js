@@ -56,6 +56,8 @@ module.exports = async function handler(req, res) {
     socialInstagram: s.socialInstagram || '',
     socialYoutube:   s.socialYoutube   || '',
     socialX:         s.socialX         || '',
+    // Only the public site's colours (the backoffice colours stay private)
+    siteColors:      { ...(s.siteColors?.light ? { light: s.siteColors.light } : {}), ...(s.siteColors?.dark ? { dark: s.siteColors.dark } : {}) },
     services,
   });
 };

@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="admin.css">
+  <script src="theme.js"></script>
   <script src="vendor/fullcalendar/fullcalendar.min.js"></script>
   <script src="vendor/fullcalendar/pt.min.js"></script>
 </head>
@@ -31,6 +32,7 @@
     <button class="dbt" data-tab="whatsapp" role="tab" aria-selected="false">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
       WhatsApp
+      <span class="dbt-badge" id="waPendingBadge" hidden></span>
     </button>
     <button class="dbt" data-tab="schedule" role="tab" aria-selected="false">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
@@ -82,6 +84,12 @@
 
       <div id="waState" class="state-msg">A carregar…</div>
 
+      <div class="settings-card wa-confirm-card" id="waConfirmCard" style="display:none">
+        <h2 class="wa-col-title">Por confirmar <span class="wa-col-date" id="waConfirmCount"></span></h2>
+        <p class="sf-hint" style="margin-bottom:14px">Marcações futuras feitas a partir de <span id="waConfirmSince">agora</span> que ainda não foram confirmadas. Envia a confirmação por WhatsApp (usa o template «confirmação de marcação») ou indica que não queres enviar mensagem. Em ambos os casos a marcação fica confirmada e sai desta lista, mas continua na agenda. Só sai da agenda se a apagares lá.</p>
+        <div id="waConfirmList"></div>
+      </div>
+
       <div class="wa-cols" style="display:none">
         <div class="settings-card">
           <h2 class="wa-col-title">Hoje <span class="wa-col-date" id="waTodayDate"></span></h2>
@@ -101,6 +109,12 @@
           Escreve a mensagem como quiseres e usa os campos automáticos abaixo — são substituídos pelos dados reais de cada marcação e pelas informações do negócio definidas em Configurações:<br>
           <code>{nome}</code> nome do cliente&ensp;·&ensp;<code>{hora}</code> hora da marcação&ensp;·&ensp;<code>{data}</code> data (DD/MM/AAAA)&ensp;·&ensp;<code>{servico}</code> serviço&ensp;·&ensp;<code>{duracao}</code> duração em minutos&ensp;·&ensp;<code>{negocio}</code> nome do negócio&ensp;·&ensp;<code>{telefone}</code> contacto do negócio&ensp;·&ensp;<code>{morada}</code> morada&ensp;·&ensp;<code>{email}</code> email do negócio
         </p>
+
+        <div class="sf-group">
+          <label for="waTplConfirm">Template — confirmação de marcação</label>
+          <textarea id="waTplConfirm" rows="3" class="wa-tpl"></textarea>
+          <p class="sf-hint" style="margin-top:6px">Usado no botão «Enviar confirmação por WhatsApp» da lista «Por confirmar».</p>
+        </div>
 
         <div class="sf-group">
           <label for="waTplToday">Template — marcações de hoje</label>
@@ -233,6 +247,42 @@
 
         <!-- Existing blockouts list -->
         <div id="blockoutsList">
+          <div style="color:var(--text3);font-size:.88rem">A carregar…</div>
+        </div>
+      </div>
+
+      <!-- ── Dias de trabalho excecionais ─── -->
+      <div class="settings-card" style="max-width:720px;margin-top:32px">
+        <h2 style="font-size:1.05rem;font-weight:600;color:var(--text);margin-bottom:6px">Dias de trabalho excecionais</h2>
+        <p class="sf-hint" style="margin-bottom:20px">Abre marcações num dia em que normalmente não trabalhas (por exemplo uma segunda-feira ou um feriado) ou com um horário diferente do habitual. Nesse dia, o horário indicado aqui substitui o horário semanal. As indisponibilidades excecionais continuam a aplicar-se.</p>
+
+        <form id="workdayForm" novalidate class="wd-form">
+          <div class="wd-grid">
+            <div class="sf-group wd-full">
+              <label for="wdLabel">Descrição <span class="wd-opt">(opcional, ex: Véspera de Natal)</span></label>
+              <input type="text" id="wdLabel" maxlength="80" placeholder="ex: Abertura especial">
+            </div>
+            <div class="sf-group">
+              <label for="wdDate">Data *</label>
+              <input type="date" id="wdDate" required>
+            </div>
+            <div class="sf-group wd-spacer"></div>
+            <div class="sf-group">
+              <label>Período 1 *</label>
+              <div class="wd-pair"><input type="time" id="wdStart1" value="09:00"><span>às</span><input type="time" id="wdEnd1" value="13:00"></div>
+            </div>
+            <div class="sf-group">
+              <label>Período 2 <span class="wd-opt">(opcional)</span></label>
+              <div class="wd-pair"><input type="time" id="wdStart2"><span>às</span><input type="time" id="wdEnd2"></div>
+            </div>
+          </div>
+          <div class="wd-actions">
+            <button type="submit" class="btn-gold" id="addWorkdayBtn">+ Adicionar dia</button>
+            <span class="sf-msg" id="wdMsg"></span>
+          </div>
+        </form>
+
+        <div id="workdaysList">
           <div style="color:var(--text3);font-size:.88rem">A carregar…</div>
         </div>
       </div>
@@ -603,6 +653,64 @@
           </div>
         </form>
       </div>
+
+      <!-- ── Cores do site ─── -->
+      <div class="settings-card colors-card">
+        <h2 class="card-title">Cores do site e do backoffice</h2>
+        <p class="sf-hint" style="margin-bottom:18px">Personaliza as cores da página pública e deste backoffice. O site tem modo claro e modo escuro, por isso cada cor do site tem um valor para cada modo. A pré-visualização ao lado muda à medida que escolhes. Nada muda até carregares em «Guardar cores».</p>
+
+        <div class="colors-theme-switch" role="tablist">
+          <button type="button" class="cts-btn active" data-theme="light">Site · modo claro</button>
+          <button type="button" class="cts-btn" data-theme="dark">Site · modo escuro</button>
+          <button type="button" class="cts-btn" data-theme="admin">Backoffice</button>
+        </div>
+
+        <div class="colors-layout">
+          <div class="colors-fields" id="colorsFields"></div>
+
+          <div class="colors-preview" id="colorsPreview" aria-label="Pré-visualização">
+            <div class="cp-section cp-paper">
+              <div class="cp-tag">Marcações</div>
+              <div class="cp-title">Reserva a tua <em>cadeira</em></div>
+              <p class="cp-text">Simples e sem esperas. Escolhe o serviço, o dia e a hora.</p>
+              <p class="cp-text2">Texto secundário e notas</p>
+              <span class="cp-btn">Marcar agora</span>
+            </div>
+            <div class="cp-section cp-bone">
+              <div class="cp-card">
+                <div class="cp-card-title">Corte</div>
+                <div class="cp-card-price">12€</div>
+                <p class="cp-text2">30 min</p>
+              </div>
+            </div>
+            <div class="ap">
+              <div class="ap-bar"><span class="ap-logo">Intem<em>poral</em></span></div>
+              <div class="ap-tabs"><span class="ap-tab on">Agenda</span><span class="ap-tab">WhatsApp</span><span class="ap-tab">Horário</span></div>
+              <div class="ap-body">
+                <div class="ap-title">Agenda</div>
+                <div class="ap-card">
+                  <div class="ap-text">10:00 · João Silva</div>
+                  <div class="ap-text2">Corte · 30 min</div>
+                  <span class="ap-btn">+ Nova marcação</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sf-footer colors-footer">
+          <div class="sf-msg" id="colorsMsg"></div>
+          <button type="button" class="btn-outline" id="colorsResetBtn">Repor cores originais</button>
+          <button type="button" class="btn-gold" id="colorsSaveBtn">Guardar cores</button>
+        </div>
+      </div>
+
+      <!-- ── Cópia de segurança ─── -->
+      <div class="settings-card" style="margin-top:24px">
+        <h2 class="card-title">Cópia de segurança</h2>
+        <p class="sf-hint" style="margin-bottom:14px">Descarrega um ficheiro com todos os dados do site: marcações, serviços, horário e configurações. Só lê os dados, não altera nada. Guarda o ficheiro num local seguro, porque contém dados de clientes.</p>
+        <a class="btn-outline" href="/api/backup" id="backupBtn" download>Descarregar cópia de segurança</a>
+      </div>
     </section>
 
     <!-- ── Account tab ─── -->
@@ -719,6 +827,10 @@
         <input type="checkbox" id="bmSendEmail"> Enviar confirmação por email ao cliente
       </label>
       <p class="bm-meta" id="bmMeta"></p>
+      <button type="button" class="bm-next" id="bmNext" hidden>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 13v6M9 16h6"/></svg>
+        <span class="bm-next-txt"><strong>Nova marcação para este cliente</strong><small>Usa o nome, o telemóvel e o email. Só escolhes a data e a hora.</small></span>
+      </button>
       <div class="modal-err" id="bmErr" hidden></div>
       <div class="modal-foot">
         <div class="modal-foot-left">

@@ -50,13 +50,53 @@ module.exports = async function handler(req, res) {
     return res.status(405).end();
   }
 
+  // ── Exceptional working days sub-resource ─────────────────
+  // A date with its own opening hours that replaces the weekly schedule,
+  // e.g. opening on a day off. Stored under its own key ('workdays').
+  if (req.query.workdays === '1') {
+    if (req.method === 'POST') {
+      const admin = await requireAdmin(req, res);
+      if (!admin) return;
+      const b = req.body || {};
+      const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v || '');
+      const isTime = v => /^\d{2}:\d{2}$/.test(v || '');
+      const date = String(b.date || '').trim();
+      const [start1, end1, start2, end2] = ['start1', 'end1', 'start2', 'end2'].map(f => String(b[f] || '').trim());
+      if (!isDate(date)) return res.status(400).json({ error: 'Indica a data.' });
+      if (!isTime(start1) || !isTime(end1) || end1 <= start1) {
+        return res.status(400).json({ error: 'Indica um horário válido (a hora de fim tem de ser depois da de início).' });
+      }
+      if ((start2 || end2) && (!isTime(start2) || !isTime(end2) || end2 <= start2 || start2 < end1)) {
+        return res.status(400).json({ error: 'O segundo período é inválido (tem de começar depois do primeiro terminar).' });
+      }
+      const workdays = ((await kv.get('workdays')) || []).filter(w => w.date !== date); // one entry per date
+      workdays.push({ id: Date.now().toString(), date, label: String(b.label || '').trim().slice(0, 80), start1, end1, start2, end2 });
+      workdays.sort((a, b2) => a.date.localeCompare(b2.date));
+      await kv.set('workdays', workdays);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (req.method === 'DELETE') {
+      const admin = await requireAdmin(req, res);
+      if (!admin) return;
+      const { id } = req.query;
+      if (!id) return res.status(400).json({ error: 'id required' });
+      const workdays = ((await kv.get('workdays')) || []).filter(w => w.id !== id);
+      await kv.set('workdays', workdays);
+      return res.status(200).json({ ok: true });
+    }
+
+    return res.status(405).end();
+  }
+
   // ── Regular schedule ──────────────────────────────────────
   if (req.method === 'GET') {
     const pipe = kv.pipeline();
     pipe.get('schedule');
     pipe.get('blockouts');
-    const [stored, blockouts] = await pipe.exec();
-    return res.status(200).json({ ...(stored || DEFAULTS), blockouts: blockouts || [] });
+    pipe.get('workdays');
+    const [stored, blockouts, workdays] = await pipe.exec();
+    return res.status(200).json({ ...(stored || DEFAULTS), blockouts: blockouts || [], workdays: workdays || [] });
   }
 
   if (req.method === 'POST') {

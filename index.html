@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Intemporal Barbearia — Corte, Barba &amp; Navalha</title>
-  <meta name="description" content="Intemporal Barbearia — Rua de Palme 277. Cortes clássicos e modernos, barba à navalha e acabamentos de detalhe. Marque a sua vez online.">
+  <title>Intemporal Barbearia · Corte, Barba &amp; Navalha</title>
+  <meta name="description" content="Intemporal Barbearia, Rua de Palme 277. Cortes clássicos e modernos, barba à navalha e acabamentos de detalhe. Marque a sua vez online.">
   <meta name="theme-color" content="#F7F7F5">
   <script>
     // Theme before first paint: the visitor's own choice (toggle) wins,
@@ -16,9 +16,36 @@
         : (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
       document.documentElement.setAttribute('data-theme', t);
     })();
+
+    // Site colours chosen in the backoffice. Applied before first paint from the
+    // last visit (localStorage) and refreshed from the server once the page loads.
+    window.applySiteColors = function (colors) {
+      var MAP = { paper: ['--paper'], bone: ['--bone'], surface: ['--surface'], ink: ['--ink'],
+                  text: ['--text'], text2: ['--text2'], button: ['--red-fill'], accent: ['--accent-d'] };
+      function darken(hex, f) {
+        var n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255].map(function (v) { return Math.round(v * f); });
+        return '#' + c.map(function (v) { return ('0' + v.toString(16)).slice(-2); }).join('');
+      }
+      function block(sel, t) {
+        if (!t) return '';
+        var out = [];
+        for (var k in MAP) {
+          if (!/^#[0-9a-fA-F]{6}$/.test(t[k] || '')) continue;
+          MAP[k].forEach(function (v) { out.push(v + ':' + t[k]); });
+          if (k === 'button') out.push('--red-fill-h:' + darken(t[k], 0.8));
+          if (k === 'paper') { out.push('--nav-bg:' + t[k] + 'f0'); out.push('--overlay:' + t[k] + 'fa'); }
+        }
+        return out.length ? sel + '{' + out.join(';') + '}' : '';
+      }
+      var css = block(':root:not([data-theme="dark"])', colors && colors.light) + block(':root[data-theme="dark"]', colors && colors.dark);
+      var el = document.getElementById('siteColors');
+      if (!el) { el = document.createElement('style'); el.id = 'siteColors'; document.head.appendChild(el); }
+      el.textContent = css;
+    };
+    try { var sc = JSON.parse(localStorage.getItem('siteColors') || 'null'); if (sc) window.applySiteColors(sc); } catch (e) {}
   </script>
   <meta property="og:title" content="Intemporal Barbearia">
-  <meta property="og:description" content="O tempo passa. O estilo fica. Corte, barba e navalha na Rua de Palme 277 — marque online.">
+  <meta property="og:description" content="O tempo passa. O estilo fica. Corte, barba e navalha na Rua de Palme 277. Marque online.">
   <meta property="og:type" content="website">
   <link rel="icon" type="image/png" href="/assets/favicon.png">
   <link rel="apple-touch-icon" href="/assets/logo-redondo.png">
@@ -307,25 +334,6 @@
     }
     .seal-core img { width: 74%; height: auto; display: block; }
 
-    .hero-badge {
-      position: absolute;
-      bottom: 4%; left: -4%;
-      background: var(--surface);
-      color: var(--ink);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 14px 18px;
-      box-shadow: var(--shadow-lg);
-      display: flex; align-items: center; gap: 12px;
-      min-width: 190px;
-    }
-    .hero-badge-icon {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: var(--ink); color: var(--accent);
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .hero-badge-label { font-size: .62rem; color: var(--text3); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
-    .hero-badge-val { font-size: .95rem; color: var(--ink); font-weight: 700; }
 
     .hero-badge2 {
       position: absolute; top: 6%; right: -2%;
@@ -349,14 +357,12 @@
       .hero-visual { order: -1; }
       .seal { width: min(280px, 78vw); }
       .hero-badge2 { right: -6%; top: 0; }
-      .hero-badge { left: -8%; bottom: -2%; min-width: 0; }
     }
     @media (max-width: 480px) {
       .hero-stats > div { padding-right: 10px; }
       .hero-stats > div + div { padding-left: 12px; }
       .hero-stat-num { font-size: 1.8rem; }
       .hero-stat-label { font-size: .58rem; letter-spacing: .1em; }
-      .hero-badge { left: 0; }
       .hero-badge2 { right: 0; }
     }
 
@@ -549,6 +555,7 @@
     .booking-step-title { font-size: .95rem; font-weight: 700; color: var(--ink); }
     .booking-step-text { font-size: .84rem; color: var(--text3); margin-top: 2px; }
 
+    .booking-card { scroll-margin-top: 84px; }
     .booking-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -630,7 +637,7 @@
     }
 
     /* ── Contact ────────────────────────────────────── */
-    .contact { padding: 120px 0; background: var(--paper); }
+    .contact { padding: 120px 0; background: var(--bone); }
     .contact-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 72px; align-items: start; }
 
     .contact-items { display: flex; flex-direction: column; gap: 22px; margin-top: 36px; }
@@ -756,13 +763,14 @@
       color: var(--ink); font-size: 1.6rem; cursor: pointer;
     }
   </style>
+  <script>(function () { var el = document.getElementById('siteColors'); if (el) document.head.appendChild(el); })();</script>
 </head>
 <body>
 
   <!-- ── Nav ──────────────────────────────────────────── -->
   <nav class="nav" id="nav">
     <div class="container nav-inner">
-      <a href="#inicio" class="nav-logo" aria-label="Intemporal Barbearia — início">
+      <a href="#inicio" class="nav-logo" aria-label="Intemporal Barbearia, início">
         <img class="logo-on-light" src="/assets/logo-light.svg" alt="Intemporal Barbearia" width="200" height="46">
         <img class="logo-on-dark" src="/assets/logo-dark.svg" alt="Intemporal Barbearia" width="200" height="46">
       </a>
@@ -845,15 +853,6 @@
               <img class="logo-on-dark" src="/assets/logo-dark.svg" alt="" width="260" height="60">
             </div>
           </div>
-          <div class="hero-badge">
-            <div class="hero-badge-icon">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </div>
-            <div>
-              <div class="hero-badge-label">Próxima vaga</div>
-              <div class="hero-badge-val" id="nextSlotBadge">—</div>
-            </div>
-          </div>
           <a class="hero-badge2" href="https://share.google/2Y409U4Trqi8jOXDf" target="_blank" rel="noopener" data-google-link>
             <div class="hero-badge2-score" id="heroGoogleScore" hidden></div>
             <div>
@@ -874,132 +873,6 @@
     </div>
   </div>
 
-  <!-- ── Sobre ─────────────────────────────────────────── -->
-  <section class="about" id="sobre">
-    <div class="container">
-      <div class="about-grid">
-        <div class="about-img-wrap reveal">
-          <div class="about-img" role="img" aria-label="Retrato do barbeiro Marco Martins">
-            <div>
-              <div class="def-word">in·tem·po·ral</div>
-              <div class="def-phon">/ĩ.tẽ.puˈɾaɫ/</div>
-              <div class="def-class">adjetivo</div>
-              <p class="def-body">Que não está sujeito ao tempo; que <em>não passa de moda.</em></p>
-            </div>
-            <div class="def-foot">
-              <span class="def-barber">Marco Martins</span>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
-            </div>
-          </div>
-          <div class="about-accent"></div>
-          <div class="about-pill">✦ O barbeiro</div>
-        </div>
-
-        <div class="about-text">
-          <span class="section-tag reveal">A Casa</span>
-          <h2 class="section-title reveal reveal-delay-1">Um nome que é<br>uma <em>promessa</em></h2>
-          <p class="section-sub reveal reveal-delay-2">
-            Intemporal é aquilo que não envelhece. É assim que olhamos para cada cliente que se senta
-            na nossa cadeira: um corte que funciona hoje, amanhã e daqui a um mês — bem desenhado,
-            bem acabado e pensado para ti.
-          </p>
-          <p class="section-sub reveal reveal-delay-2" style="margin-top:16px">
-            Juntamos as técnicas da barbearia tradicional — tesoura, navalha e toalha quente —
-            ao rigor dos cortes de hoje. Cada visita começa com uma conversa e acaba com um espelho
-            que confirma: era mesmo isto.
-          </p>
-
-          <div class="about-features">
-            <div class="about-feat reveal reveal-delay-3">
-              <div class="about-feat-icon">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
-              </div>
-              <div>
-                <div class="about-feat-title">Técnica clássica</div>
-                <div class="about-feat-text">Tesoura, máquina e navalha com precisão</div>
-              </div>
-            </div>
-            <div class="about-feat reveal reveal-delay-3">
-              <div class="about-feat-icon">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
-              </div>
-              <div>
-                <div class="about-feat-title">Olhar atual</div>
-                <div class="about-feat-text">Degradês e estilos de hoje, bem executados</div>
-              </div>
-            </div>
-            <div class="about-feat reveal reveal-delay-4">
-              <div class="about-feat-icon">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              </div>
-              <div>
-                <div class="about-feat-title">Sem esperas</div>
-                <div class="about-feat-text">Marca online e chega à hora certa</div>
-              </div>
-            </div>
-            <div class="about-feat reveal reveal-delay-4">
-              <div class="about-feat-icon">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-              </div>
-              <div>
-                <div class="about-feat-title">Detalhe a sério</div>
-                <div class="about-feat-text">Contornos, acabamentos e cuidado no fim</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── Serviços ───────────────────────────────────────── -->
-  <section class="services" id="servicos">
-    <div class="container">
-      <div class="services-head">
-        <div>
-          <span class="section-tag reveal">Serviços</span>
-          <h2 class="section-title reveal reveal-delay-1">A carta da<br><em>casa</em></h2>
-        </div>
-        <p class="section-sub reveal reveal-delay-2">Do corte clássico ao degradê mais limpo, da barba aparada ao ritual completo com navalha e toalha quente. Escolhe o teu serviço e marca em segundos.</p>
-      </div>
-
-      <!-- Filled with the services configured in the backoffice -->
-      <div class="services-grid" id="servicesGrid"></div>
-      <p class="services-empty" id="servicesEmpty">Consulta os nossos serviços e preços na marcação online ou fala connosco no <a href="https://www.instagram.com/intemporal.barbearia/" target="_blank" rel="noopener">Instagram</a>.</p>
-      <p class="services-note" id="servicesNote" hidden>Preços com IVA incluído à taxa legal em vigor.</p>
-    </div>
-  </section>
-
-  <!-- ── Avaliações Google ──────────────────────────────── -->
-  <section class="reviews" id="avaliacoes">
-    <div class="container">
-      <div class="reviews-head">
-        <div>
-          <span class="section-tag reveal">Avaliações Google</span>
-          <h2 class="section-title reveal reveal-delay-1" style="margin-bottom:0">Quem senta,<br><em>volta</em></h2>
-        </div>
-        <div class="reviews-summary reveal reveal-delay-2" id="reviewsSummary" hidden>
-          <div class="reviews-score" id="reviewsScore"></div>
-          <div>
-            <div class="reviews-stars" id="reviewsStars"></div>
-            <div class="reviews-count" id="reviewsCount"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="reviews-grid" id="reviewsGrid" hidden></div>
-
-      <div class="reviews-empty reveal reveal-delay-2" id="reviewsEmpty">
-        <p>A melhor publicidade é quem sai da cadeira e volta. Lê o que os nossos clientes dizem de nós no Google.</p>
-      </div>
-
-      <div class="rating-links reveal reveal-delay-3">
-        <a class="btn btn-dark" href="https://share.google/2Y409U4Trqi8jOXDf" target="_blank" rel="noopener" data-google-link>Ver avaliações no Google</a>
-        <a class="btn btn-line" id="reviewWriteLink" href="https://share.google/2Y409U4Trqi8jOXDf" target="_blank" rel="noopener">Deixar avaliação</a>
-      </div>
-    </div>
-  </section>
-
   <!-- ── Agendamento ───────────────────────────────────── -->
   <section class="booking" id="agendamento">
     <div class="container">
@@ -1007,7 +880,7 @@
         <div class="booking-info">
           <span class="section-tag reveal">Marcações</span>
           <h2 class="section-title reveal reveal-delay-1">Reserva a<br>tua <em>cadeira</em></h2>
-          <p class="section-sub reveal reveal-delay-2">Simples e sem esperas. Escolhe o serviço, o dia e a hora que te dão mais jeito — o resto é connosco.</p>
+          <p class="section-sub reveal reveal-delay-2">Simples e sem esperas. Escolhe o serviço, o dia e a hora que te dão mais jeito. O resto é connosco.</p>
 
           <div class="booking-steps" id="bookingSteps">
             <div class="booking-step reveal reveal-delay-2" id="stepService" style="display:none">
@@ -1118,6 +991,132 @@
     </div>
   </section>
 
+  <!-- ── Sobre ─────────────────────────────────────────── -->
+  <section class="about" id="sobre">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-img-wrap reveal">
+          <div class="about-img" role="img" aria-label="Retrato do barbeiro Marco Martins">
+            <div>
+              <div class="def-word">in·tem·po·ral</div>
+              <div class="def-phon">/ĩ.tẽ.puˈɾaɫ/</div>
+              <div class="def-class">adjetivo</div>
+              <p class="def-body">Que não está sujeito ao tempo; que <em>não passa de moda.</em></p>
+            </div>
+            <div class="def-foot">
+              <span class="def-barber">Marco Martins</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+            </div>
+          </div>
+          <div class="about-accent"></div>
+          <div class="about-pill">✦ O barbeiro</div>
+        </div>
+
+        <div class="about-text">
+          <span class="section-tag reveal">A Casa</span>
+          <h2 class="section-title reveal reveal-delay-1">Um nome que é<br>uma <em>promessa</em></h2>
+          <p class="section-sub reveal reveal-delay-2">
+            Intemporal é aquilo que não envelhece. É assim que olhamos para cada cliente que se senta
+            na nossa cadeira: um corte que funciona hoje, amanhã e daqui a um mês. Bem desenhado,
+            bem acabado e pensado para ti.
+          </p>
+          <p class="section-sub reveal reveal-delay-2" style="margin-top:16px">
+            Juntamos as técnicas da barbearia tradicional, como a tesoura e a navalha,
+            ao rigor dos cortes de hoje. Cada visita começa com uma conversa e acaba com um espelho
+            que confirma: era mesmo isto.
+          </p>
+
+          <div class="about-features">
+            <div class="about-feat reveal reveal-delay-3">
+              <div class="about-feat-icon">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+              </div>
+              <div>
+                <div class="about-feat-title">Técnica clássica</div>
+                <div class="about-feat-text">Tesoura, máquina e navalha com precisão</div>
+              </div>
+            </div>
+            <div class="about-feat reveal reveal-delay-3">
+              <div class="about-feat-icon">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+              </div>
+              <div>
+                <div class="about-feat-title">Olhar atual</div>
+                <div class="about-feat-text">Degradês e estilos de hoje, bem executados</div>
+              </div>
+            </div>
+            <div class="about-feat reveal reveal-delay-4">
+              <div class="about-feat-icon">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div>
+                <div class="about-feat-title">Sem esperas</div>
+                <div class="about-feat-text">Marca online e chega à hora certa</div>
+              </div>
+            </div>
+            <div class="about-feat reveal reveal-delay-4">
+              <div class="about-feat-icon">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </div>
+              <div>
+                <div class="about-feat-title">Detalhe a sério</div>
+                <div class="about-feat-text">Contornos, acabamentos e cuidado no fim</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Serviços ───────────────────────────────────────── -->
+  <section class="services" id="servicos">
+    <div class="container">
+      <div class="services-head">
+        <div>
+          <span class="section-tag reveal">Serviços</span>
+          <h2 class="section-title reveal reveal-delay-1">A carta da<br><em>casa</em></h2>
+        </div>
+        <p class="section-sub reveal reveal-delay-2">Do corte clássico ao degradê mais limpo, da barba aparada ao acabamento à navalha. Escolhe o teu serviço e marca em segundos.</p>
+      </div>
+
+      <!-- Filled with the services configured in the backoffice -->
+      <div class="services-grid" id="servicesGrid"></div>
+      <p class="services-empty" id="servicesEmpty">Consulta os nossos serviços e preços na marcação online ou fala connosco no <a href="https://www.instagram.com/intemporal.barbearia/" target="_blank" rel="noopener">Instagram</a>.</p>
+      <p class="services-note" id="servicesNote" hidden>Preços com IVA incluído à taxa legal em vigor.</p>
+    </div>
+  </section>
+
+  <!-- ── Avaliações Google ──────────────────────────────── -->
+  <section class="reviews" id="avaliacoes">
+    <div class="container">
+      <div class="reviews-head">
+        <div>
+          <span class="section-tag reveal">Avaliações Google</span>
+          <h2 class="section-title reveal reveal-delay-1" style="margin-bottom:0">Quem senta,<br><em>volta</em></h2>
+        </div>
+        <div class="reviews-summary reveal reveal-delay-2" id="reviewsSummary" hidden>
+          <div class="reviews-score" id="reviewsScore"></div>
+          <div>
+            <div class="reviews-stars" id="reviewsStars"></div>
+            <div class="reviews-count" id="reviewsCount"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reviews-grid" id="reviewsGrid" hidden></div>
+
+      <div class="reviews-empty reveal reveal-delay-2" id="reviewsEmpty">
+        <p>A melhor publicidade é quem sai da cadeira e volta. Lê o que os nossos clientes dizem de nós no Google.</p>
+      </div>
+
+      <div class="rating-links reveal reveal-delay-3">
+        <a class="btn btn-dark" href="https://share.google/2Y409U4Trqi8jOXDf" target="_blank" rel="noopener" data-google-link>Ver avaliações no Google</a>
+        <a class="btn btn-line" id="reviewWriteLink" href="https://share.google/2Y409U4Trqi8jOXDf" target="_blank" rel="noopener">Deixar avaliação</a>
+      </div>
+    </div>
+  </section>
+
   <!-- ── Contactos ─────────────────────────────────────── -->
   <section class="contact" id="contactos">
     <div class="container">
@@ -1207,7 +1206,7 @@
         </a>
         <p class="footer-ral">
           Em caso de litígio de consumo, o consumidor pode recorrer a uma Entidade de Resolução Alternativa de Litígios de Consumo:
-          <a href="https://www.cniacc.pt" target="_blank" rel="noopener">CNIACC — Centro Nacional de Informação e Arbitragem de Conflitos de Consumo</a><span id="ralLocal"></span>.
+          <a href="https://www.cniacc.pt" target="_blank" rel="noopener">CNIACC, Centro Nacional de Informação e Arbitragem de Conflitos de Consumo</a><span id="ralLocal"></span>.
           Mais informações no <a href="https://www.consumidor.gov.pt" target="_blank" rel="noopener">Portal do Consumidor</a>.
         </p>
       </div>
@@ -1242,7 +1241,7 @@
       document.getElementById('contactMap').innerHTML = `<iframe
         src="https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed&z=15"
         width="100%" height="100%" style="border:0;display:block"
-        allowfullscreen title="Mapa — Intemporal Barbearia"
+        allowfullscreen title="Mapa da Intemporal Barbearia"
         referrerpolicy="no-referrer-when-downgrade"></iframe>`;
     });
 
@@ -1252,6 +1251,14 @@
         const res = await fetch('/api/public-settings');
         if (!res.ok) return;
         const pub = await res.json();
+
+        // Site colours chosen in the backoffice (remembered for the next visit's first paint)
+        const colors = pub.siteColors || {};
+        window.applySiteColors(colors);
+        try {
+          if (Object.keys(colors).length) localStorage.setItem('siteColors', JSON.stringify(colors));
+          else localStorage.removeItem('siteColors');
+        } catch (e) {}
 
         // Address + map (the page ships with Rua de Palme 277 as default; backoffice value wins)
         const address = pub.address || '';
@@ -1299,53 +1306,6 @@
           socialEl.appendChild(a);
         });
         if (hasAny) socialEl.style.display = 'flex';
-      } catch {}
-    })();
-
-    /* ── Next available slot badge ───────────────────── */
-    (async () => {
-      try {
-        const [schedRes, settingsRes] = await Promise.all([
-          fetch('/api/schedule'),
-          fetch('/api/public-settings').catch(() => null),
-        ]);
-        if (!schedRes.ok) return;
-        const sched = await schedRes.json();
-        let step = 20;
-        if (settingsRes && settingsRes.ok) {
-          const pub = await settingsRes.json().catch(() => ({}));
-          if (pub?.slotStep) step = pub.slotStep;
-        }
-
-        const DAY_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-        const defaultDur = 30;
-        const base = new Date(); base.setHours(0, 0, 0, 0);
-
-        // Walk forward day by day (usually 1–2 requests) until a free slot shows up
-        for (let offset = 0; offset < 14; offset++) {
-          const d = new Date(base); d.setDate(base.getDate() + offset);
-          const day = sched[SlotLogic.DAY_KEYS[d.getDay()]];
-          if (!SlotLogic.periodsFor(day).length) continue;
-          const datePt = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
-
-          let occ = { bookedSegments: [], blockedRanges: [], now: null };
-          try {
-            const sr = await fetch(`/api/slots?date=${encodeURIComponent(datePt)}`);
-            if (sr.ok) occ = await sr.json();
-          } catch {}
-
-          const free = SlotLogic.generateDaySlots({
-            day, step, duration: defaultDur,
-            booked: occ.bookedSegments, blocked: occ.blockedRanges,
-            notBeforeMin: occ.now && occ.now.datePt === datePt ? occ.now.min : null,
-          }).find(sl => sl.available);
-          if (!free) continue;
-
-          const label = offset === 0 ? 'Hoje' : offset === 1 ? 'Amanhã' : DAY_SHORT[d.getDay()];
-          document.getElementById('nextSlotBadge').textContent = `${label}, ${free.time}`;
-          return;
-        }
-        document.getElementById('nextSlotBadge').textContent = 'Sem vagas próximas';
       } catch {}
     })();
 
@@ -1441,13 +1401,13 @@
 
         for (const row of rows) {
           const label = row.days.length > 1
-            ? `${DAY_LABELS[row.days[0]]} — ${DAY_LABELS[row.days[row.days.length - 1]]}`
+            ? `${DAY_LABELS[row.days[0]]} a ${DAY_LABELS[row.days[row.days.length - 1]]}`
             : DAY_LABELS[row.days[0]];
           let timeHtml = '<span class="hours-time" style="color:var(--text3)">Encerrado</span>';
           if (row.active) {
             const d = row.d;
-            let t = `${d.start1} — ${d.end1}`;
-            if (d.start2 && d.end2) t += ` | ${d.start2} — ${d.end2}`;
+            let t = `${d.start1} às ${d.end1}`;
+            if (d.start2 && d.end2) t += ` · ${d.start2} às ${d.end2}`;
             timeHtml = `<span class="hours-time">${t}</span>`;
           }
           const el = document.createElement('div');
@@ -1503,6 +1463,20 @@
     document.getElementById('mobileClose').addEventListener('click', closeMobile);
     document.querySelectorAll('.mobile-link').forEach(l => l.addEventListener('click', closeMobile));
 
+    /* ── "Marcar" links ──────────────────────────────── */
+    // On phones the step-by-step text sits above the form, so land on the form itself
+    const BOOKING_MOBILE = window.matchMedia('(max-width: 900px)');
+    function goToBooking(smooth = true) {
+      const target = BOOKING_MOBILE.matches ? document.querySelector('.booking-card') : document.getElementById('agendamento');
+      if (target) target.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+    }
+    document.querySelectorAll('a[href="#agendamento"]').forEach(a => a.addEventListener('click', e => {
+      e.preventDefault();
+      // Let the mobile menu close first so the page can scroll
+      setTimeout(() => goToBooking(), a.classList.contains('mobile-link') ? 60 : 0);
+      history.replaceState(null, '', '#agendamento');
+    }));
+
     /* ── Scroll reveal ───────────────────────────────── */
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
@@ -1557,7 +1531,8 @@
         const dayKey  = DAY_KEYS[date.getDay()];
         const isPast  = date < TODAY;
         const dateStr = `${calYear}-${pad(calMonth+1)}-${pad(d)}`;
-        const isActive = calSchedule ? Boolean(calSchedule[dayKey]?.active) : true;
+        const isExtra  = Boolean(calSchedule && SlotLogic.workdayFor(calSchedule.workdays, dateStr));
+        const isActive = calSchedule ? (isExtra || Boolean(calSchedule[dayKey]?.active)) : true;
         const isBlocked = !isPast && isActive && isDayFullyBlocked(dateStr);
         const isToday    = date.getTime() === TODAY.getTime();
         const isSelected = dateStr === calSelected;
@@ -1622,7 +1597,6 @@
           // Hide booking section and all CTAs
           const toHide = [
             document.getElementById('agendamento'),
-            document.querySelector('.hero-badge'),
             ...document.querySelectorAll('.nav-cta, .mobile-link, .svc-link'),
             document.querySelector('.hero-btns a.btn-primary'),
           ];
@@ -1686,7 +1660,7 @@
         card.querySelector('.svc-link')?.addEventListener('click', () => {
           const opt = document.querySelector(`.svc-option[data-id="${CSS.escape(String(svc.id))}"]`);
           if (opt) selectService(opt, svc);
-          document.getElementById('agendamento').scrollIntoView({ behavior: 'smooth' });
+          goToBooking();
         });
         grid.appendChild(card);
       });
@@ -1741,7 +1715,10 @@
 
         const schedule = calSchedule;
         if (!schedule) throw new Error();
-        const day = schedule[dayKey];
+        const [y2, mo2, d2] = val.split('-');
+        const datePt = `${d2}/${mo2}/${y2}`;
+        // Exceptional working days replace the weekly schedule for that date
+        const day = SlotLogic.dayFor(schedule, schedule.workdays, datePt);
 
         if (!SlotLogic.periodsFor(day).length) {
           slotsEl.innerHTML = '';
@@ -1750,8 +1727,6 @@
         }
 
         // Occupied time (bookings + blockouts) and the shop's current time (Lisbon)
-        const [y2, mo2, d2] = val.split('-');
-        const datePt = `${d2}/${mo2}/${y2}`;
         const excl = resched ? `&exclude=${encodeURIComponent(RESCHED_TOKEN)}` : '';
         const slotsRes = await fetch(`/api/slots?date=${encodeURIComponent(datePt)}${excl}`);
         if (!slotsRes.ok) throw new Error();
@@ -1914,7 +1889,7 @@
         banner.classList.remove('warn');
         banner.innerHTML = `<div class="resched-title">Remarcação</div>
           Está a remarcar <strong>${esc2(b.service)}</strong> de <strong>${esc2(b.date)} às ${esc2(b.time)}</strong>.
-          Escolha o novo dia e hora — ao confirmar, a marcação atual é cancelada e substituída pela nova.<br>
+          Escolha o novo dia e hora. Ao confirmar, a marcação atual é cancelada e substituída pela nova.<br>
           <button type="button" id="reschedCancel">Não quero remarcar</button>`;
         banner.hidden = false;
         document.getElementById('reschedCancel').addEventListener('click', () => endReschedule());
@@ -1928,7 +1903,7 @@
         banner.innerHTML = `<div class="resched-title">Remarcação</div>${esc2(err.message)}`;
         banner.hidden = false;
       }
-      document.getElementById('agendamento').scrollIntoView();
+      goToBooking(false);
     })();
 
     /* ── Mouse parallax (dark sections) ─────────────── */
@@ -1945,7 +1920,7 @@
     <div style="background:#fff;border-radius:12px;max-width:580px;width:100%;max-height:90vh;overflow-y:auto;padding:32px 28px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)">
       <button id="closePrivacy" type="button" aria-label="Fechar" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888;line-height:1">&#x2715;</button>
       <h2 style="margin:0 0 6px;font-size:1.2rem;color:#1a1a1a">Política de Privacidade</h2>
-      <p style="margin:0 0 20px;font-size:.8rem;color:#999">Regulamento Geral sobre a Proteção de Dados (RGPD — Reg. UE 2016/679) · Lei n.º 58/2019 · Última atualização: outubro de 2026</p>
+      <p style="margin:0 0 20px;font-size:.8rem;color:#999">Regulamento Geral sobre a Proteção de Dados (RGPD, Reg. UE 2016/679) · Lei n.º 58/2019 · Última atualização: outubro de 2026</p>
 
       <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">1. Responsável pelo Tratamento</h3>
       <p id="privacyController" style="margin:0 0 4px;font-size:.88rem;color:#444;line-height:1.6"></p>
@@ -1966,13 +1941,13 @@
       <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">6. Os Seus Direitos</h3>
       <p style="margin:0 0 8px;font-size:.88rem;color:#444;line-height:1.6">Nos termos do RGPD, assistem-lhe os seguintes direitos:</p>
       <ul style="margin:0 0 16px;padding-left:18px;font-size:.88rem;color:#444;line-height:1.8">
-        <li><strong>Acesso</strong> — consultar os dados que guardamos sobre si</li>
-        <li><strong>Retificação</strong> — corrigir dados inexatos ou incompletos</li>
-        <li><strong>Apagamento</strong> — solicitar a eliminação dos seus dados</li>
-        <li><strong>Portabilidade</strong> — receber os seus dados em formato estruturado</li>
-        <li><strong>Oposição</strong> — opor-se ao tratamento dos seus dados</li>
-        <li><strong>Limitação</strong> — restringir o tratamento em determinadas circunstâncias</li>
-        <li><strong>Retirada do consentimento</strong> — sem prejuízo da licitude do tratamento anterior</li>
+        <li><strong>Acesso:</strong> consultar os dados que guardamos sobre si</li>
+        <li><strong>Retificação:</strong> corrigir dados inexatos ou incompletos</li>
+        <li><strong>Apagamento:</strong> solicitar a eliminação dos seus dados</li>
+        <li><strong>Portabilidade:</strong> receber os seus dados em formato estruturado</li>
+        <li><strong>Oposição:</strong> opor-se ao tratamento dos seus dados</li>
+        <li><strong>Limitação:</strong> restringir o tratamento em determinadas circunstâncias</li>
+        <li><strong>Retirada do consentimento:</strong> sem prejuízo da licitude do tratamento anterior</li>
       </ul>
 
       <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">7. Cookies e Conteúdos de Terceiros</h3>
@@ -1980,7 +1955,7 @@
 
       <h3 style="font-size:.9rem;color:#333;margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em">8. Exercício de Direitos e Reclamações</h3>
       <p id="privacyContact" style="margin:0 0 8px;font-size:.88rem;color:#444;line-height:1.6"></p>
-      <p style="margin:0 0 16px;font-size:.88rem;color:#444;line-height:1.6">Tem ainda o direito de apresentar reclamação à autoridade de controlo nacional: <strong>CNPD</strong> — Comissão Nacional de Proteção de Dados (<a href="https://www.cnpd.pt" target="_blank" rel="noopener" style="color:var(--red)">www.cnpd.pt</a>).</p>
+      <p style="margin:0 0 16px;font-size:.88rem;color:#444;line-height:1.6">Tem ainda o direito de apresentar reclamação à autoridade de controlo nacional: <strong>CNPD</strong>, Comissão Nacional de Proteção de Dados (<a href="https://www.cnpd.pt" target="_blank" rel="noopener" style="color:var(--red)">www.cnpd.pt</a>).</p>
 
       <button type="button" id="closePrivacy2" style="display:block;width:100%;padding:12px;background:var(--ink,#0E0D0B);color:#fff;border:none;border-radius:2px;letter-spacing:.08em;font-size:.95rem;font-weight:600;cursor:pointer;margin-top:4px">Fechar</button>
     </div>

@@ -11,6 +11,8 @@
    • A slot is only offered if the whole service fits: it must end
      before the period closes (e.g. lunch) and not overlap any
      booking or blockout.
+   • Exceptional working days (set in the backoffice) replace the
+     weekly schedule for that date, e.g. opening on a day off.
    ───────────────────────────────────────────────────────── */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
@@ -51,6 +53,19 @@
     return [[day.start1, day.end1], [day.start2, day.end2]]
       .map(([s, e]) => [toMin(s), toMin(e)])
       .filter(([s, e]) => s !== null && e !== null && e > s);
+  }
+
+  // Exceptional working day for a 'YYYY-MM-DD' date, if any
+  function workdayFor(workdays, dateISO) {
+    return (workdays || []).find(w => w && w.date === dateISO) || null;
+  }
+
+  // Schedule day that applies to a 'DD/MM/YYYY' date: an exceptional working
+  // day replaces the weekly schedule for that date
+  function dayFor(schedule, workdays, datePt) {
+    const w = workdayFor(workdays, ptToISO(datePt));
+    if (w) return { active: true, start1: w.start1 || '', end1: w.end1 || '', start2: w.start2 || '', end2: w.end2 || '' };
+    return (schedule || {})[dayKeyOf(datePt)];
   }
 
   // Blockouts that touch a given date, as minute ranges within that day
@@ -119,12 +134,12 @@
    * Validates a public booking request against schedule, blockouts, existing bookings and the clock.
    * @returns null when bookable, otherwise a user-facing error message
    */
-  function checkBookable({ schedule, blockouts, bookings, datePt, time, duration, defaultDur, now }) {
+  function checkBookable({ schedule, workdays, blockouts, bookings, datePt, time, duration, defaultDur, now }) {
     const start = toMin(time);
     if (start === null || !/^\d{2}\/\d{2}\/\d{4}$/.test(datePt || '')) return 'Data ou hora inválida.';
     const end = start + duration;
 
-    const periods = periodsFor((schedule || {})[dayKeyOf(datePt)]);
+    const periods = periodsFor(dayFor(schedule, workdays, datePt));
     if (!periods.some(([s, e]) => start >= s && end <= e)) {
       return 'Este horário está fora do horário de atendimento. Por favor escolha outro.';
     }
@@ -144,7 +159,7 @@
   }
 
   return {
-    DAY_KEYS, DEFAULT_SCHEDULE, toMin, toTime, ptToISO, dayKeyOf, periodsFor,
+    DAY_KEYS, DEFAULT_SCHEDULE, toMin, toTime, ptToISO, dayKeyOf, periodsFor, workdayFor, dayFor,
     blockedRangesFor, bookedSegmentsFor, generateDaySlots, lisbonNow, checkBookable,
   };
 });

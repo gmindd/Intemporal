@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "preview:local": "node dev/local-preview.js",
+    "backup": "node scripts/backup-kv.js"
   },
   "engines": {
     "node": ">=20"

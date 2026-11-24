@@ -1,2 +1,6 @@
 node_modules/
 .env
+dev/.local-data.json
+dev/.local-data-backup.json
+prints/
+backups/
